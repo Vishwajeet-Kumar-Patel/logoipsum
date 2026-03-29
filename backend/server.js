@@ -15,8 +15,10 @@ app.use(express.urlencoded({ extended: true }));
 connectDB();
 
 // API Routes
+app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/creator', creatorRoutes);
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/user', require('./routes/userRoutes'));
 
 app.get('/', (req, res) => {
   res.send('API running...');

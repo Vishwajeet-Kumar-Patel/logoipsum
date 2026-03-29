@@ -3,11 +3,43 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, CheckCircle2, Circle } from "lucide-react";
+import api from "@/src/lib/api";
+import { useAuthStore } from "@/src/store/useAuthStore";
+import toast from "react-hot-toast";
 
 export default function SignUpPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const role = searchParams.get('role') || 'user';
+  
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const login = useAuthStore((state) => state.login);
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+        const res = await api.post('/auth/register', { name, email, password, role });
+        login(res.data);
+        toast.success("Account created!");
+        
+        // Redirect based on role
+        if (role === 'creator') router.push('/creator');
+        else if (role === 'admin') router.push('/admin');
+        else router.push('/user');
+    } catch (err: any) {
+        toast.error(err.response?.data?.message || "Registration failed");
+    } finally {
+        setLoading(false);
+    }
+  };
 
   // Password Validation Logic
   const hasMinLength = password.length >= 8;
@@ -59,9 +91,9 @@ export default function SignUpPage() {
             </p>
           </div>
 
-          <form className="flex flex-col gap-4 w-full" onSubmit={(e) => e.preventDefault()}>
+          <form className="flex flex-col gap-4 w-full" onSubmit={handleRegister}>
             
-            {/* Phone Number */}
+            {/* Phone Number (Optional for now) */}
             <div className="flex flex-col gap-2">
               <label 
                 className="text-[#1a1a1a] text-[28px] tracking-[0.56px] leading-tight"
@@ -87,23 +119,29 @@ export default function SignUpPage() {
               </label>
               <input 
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="hello@chainex.co"
+                required
                 className="w-full bg-[#faf8f5] border border-[#d8d1c7] rounded-full px-6 py-4 outline-none focus:border-[#ff9465] transition-colors text-base text-[#1a1a1a] font-medium placeholder:text-[#9a9a9a]"
                 style={{ fontFamily: "'Figtree', sans-serif" }}
               />
             </div>
 
-            {/* User Name */}
+            {/* Name */}
             <div className="flex flex-col gap-2">
               <label 
                 className="text-[#1a1a1a] text-[28px] tracking-[0.56px] leading-tight"
                 style={{ fontFamily: "'Fjalla One', sans-serif" }}
               >
-                User Name
+                Name
               </label>
               <input 
                 type="text"
-                placeholder="********"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your Name"
+                required
                 className="w-full bg-[#faf8f5] border border-[#d8d1c7] rounded-full px-6 py-4 outline-none focus:border-[#ff9465] transition-colors text-base text-[#1a1a1a] font-medium placeholder:text-[#9a9a9a]"
                 style={{ fontFamily: "'Inter', sans-serif" }}
               />
@@ -123,6 +161,7 @@ export default function SignUpPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="********"
+                  required
                   className="w-full bg-[#faf8f5] border border-[#d8d1c7] rounded-full pl-6 pr-12 py-4 outline-none focus:border-[#ff9465] transition-colors text-base text-[#1a1a1a] font-medium placeholder:text-[#9a9a9a]"
                   style={{ fontFamily: "'Inter', sans-serif" }}
                 />
@@ -164,17 +203,21 @@ export default function SignUpPage() {
               </div>
             </div>
 
+            {/* Role Display */}
+            <p className="text-sm font-bold text-rose-500 uppercase tracking-tighter ml-6">Registering as: {role}</p>
+
             {/* Submit Button */}
             <div className="flex justify-center mt-6">
               <button
                 type="submit"
-                className="px-10 py-3 rounded-full border border-[#ff9465] text-[#f6f4f1] shadow-[8px_8px_20px_0px_rgba(69,9,0,0.35)] transition-transform hover:scale-105 active:scale-95 whitespace-nowrap"
+                disabled={loading}
+                className="px-10 py-3 rounded-full border border-[#ff9465] text-[#f6f4f1] shadow-[8px_8px_20px_0px_rgba(69,9,0,0.35)] transition-transform hover:scale-105 active:scale-95 whitespace-nowrap opacity-90 hover:opacity-100 disabled:opacity-50"
                 style={{
                   background: "linear-gradient(131.5deg, #e14517 57.5%, #d6361f 100%)",
                   fontFamily: "'Lexend', sans-serif",
                 }}
               >
-                Create Account
+                {loading ? "Creating..." : "Create Account"}
               </button>
             </div>
           </form>

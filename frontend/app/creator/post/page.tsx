@@ -2,11 +2,75 @@
 
 import React, { useState } from 'react';
 import { Upload, Link as LinkIcon, Paperclip, X, Eye, Save, Globe, Lock, Shield, User, Clock, Bell, Mail, MessageSquare, Plus, Smartphone, Monitor, ChevronDown, Heart, Diamond, Zap, Trash2, FileText, LayoutTemplate } from 'lucide-react';
+import api from '@/src/lib/api';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 export default function CreatePostPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('Upload images, videos, audio');
   const [audience, setAudience] = useState('Everyone');
   const [previewOpen, setPreviewOpen] = useState(false);
+  
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [publishing, setPublishing] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      if (selectedFile.type.startsWith('image/') || selectedFile.type.startsWith('video/')) {
+        setPreviewUrl(URL.createObjectURL(selectedFile));
+      } else {
+        setPreviewUrl(null);
+      }
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!title || !description) {
+      toast.error("Title and description are required");
+      return;
+    }
+
+    setPublishing(true);
+    try {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+
+      let mediaType = 'image';
+      if (activeTab === 'Link') {
+        mediaType = 'link';
+        formData.append('mediaUrl', linkUrl);
+      } else if (activeTab === 'Attachments') {
+        mediaType = 'file';
+        if (file) formData.append('file', file);
+      } else if (file) {
+        mediaType = file.type.startsWith('video/') ? 'video' : 'image';
+        formData.append('file', file);
+      }
+
+      formData.append('mediaType', mediaType);
+      formData.append('isExclusive', String(audience !== 'Everyone'));
+
+      await api.post('/creator/posts', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      toast.success("Post published successfully!");
+      router.push('/creator');
+    } catch (err: any) {
+      console.error("Error publishing post:", err);
+      toast.error(err.response?.data?.error || "Failed to publish post");
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <div className="flex bg-[#f9f9f9] min-h-screen font-sans">
@@ -35,22 +99,50 @@ export default function CreatePostPage() {
                   ))}
                </div>
 
-               {activeTab === 'Upload images, videos, audio' && (
-                  <div className="bg-white border-2 border-dashed border-slate-200 rounded-[32px] p-16 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
-                     <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-6">
-                        <Upload className="w-6 h-6 text-slate-400" />
+                {activeTab === 'Upload images, videos, audio' && (
+                  <div 
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                    className="bg-white border-2 border-dashed border-slate-200 rounded-[32px] p-16 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 transition-colors shadow-sm relative overflow-hidden group"
+                  >
+                     {previewUrl ? (
+                         file?.type.startsWith('video/') ? (
+                             <video src={previewUrl} className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
+                         ) : (
+                             <img src={previewUrl} className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" alt="Preview" />
+                         )
+                     ) : (
+                         <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-6">
+                            <Upload className="w-6 h-6 text-slate-400" />
+                         </div>
+                     )}
+                     
+                     <div className="relative z-10">
+                        <p className="text-[14px] font-bold text-slate-500 mb-6 max-w-xs">{file ? `Selected: ${file.name}` : 'Recommended: 1280x720px (16:9 aspect ratio)'}</p>
+                        
+                        <input 
+                            type="file" 
+                            id="file-upload" 
+                            className="hidden" 
+                            onChange={handleFileChange}
+                            accept="image/*,video/*,audio/*"
+                        />
+                        <span className="px-6 py-2.5 bg-white border border-slate-200 text-[#111827] text-xs font-bold rounded-full hover:bg-slate-50 transition-colors shadow-sm">
+                            {file ? 'Change File' : 'Choose File'}
+                        </span>
                      </div>
-                     <p className="text-[14px] font-bold text-slate-500 mb-6 max-w-xs">Recommended: 1280x720px (16:9 aspect ratio)</p>
-                     <button className="px-6 py-2.5 bg-white border border-slate-200 text-[#111827] text-xs font-bold rounded-full hover:bg-slate-50 transition-colors shadow-sm">
-                        Choose File
-                     </button>
                   </div>
                )}
 
                {activeTab === 'Link' && (
                   <div className="bg-white border-2 border-dashed border-slate-200 rounded-[32px] p-16 flex items-center justify-center shadow-sm">
                      <div className="w-full max-w-2xl bg-[#fafafa] border border-slate-200 rounded-2xl p-5 flex items-center gap-4 transition-all focus-within:border-rose-300 focus-within:ring-1 focus-within:ring-rose-200">
-                        <input type="text" placeholder="Type or paste any URL" className="w-full bg-transparent text-sm font-medium text-slate-700 outline-none" />
+                        <input 
+                          type="text" 
+                          value={linkUrl}
+                          onChange={(e) => setLinkUrl(e.target.value)}
+                          placeholder="Type or paste any URL" 
+                          className="w-full bg-transparent text-sm font-medium text-slate-700 outline-none" 
+                        />
                      </div>
                   </div>
                )}
@@ -70,9 +162,18 @@ export default function CreatePostPage() {
                            </button>
                         </div>
                      </div>
-                     <button className="px-6 py-2.5 bg-[#f5f5f4] border border-slate-200 text-[#111827] text-xs font-bold rounded-full hover:bg-white transition-all shadow-sm">
-                        Upload more
-                     </button>
+                     <input 
+                        type="file" 
+                        id="attachment-upload" 
+                        className="hidden" 
+                        onChange={handleFileChange}
+                      />
+                      <label 
+                        htmlFor="attachment-upload"
+                        className="px-6 py-2.5 bg-[#f5f5f4] border border-slate-200 text-[#111827] text-xs font-bold rounded-full hover:bg-white transition-all shadow-sm cursor-pointer"
+                      >
+                        {activeTab === 'Attachments' && file ? file.name : 'Upload more'}
+                      </label>
                   </div>
                )}
             </div>
@@ -81,12 +182,22 @@ export default function CreatePostPage() {
             <div className="space-y-10">
                <div>
                   <label className="block text-[13px] font-bold text-[#111827] mb-3.5 ml-1">Title *</label>
-                  <input type="text" placeholder="e.g., Advanced React Patterns" className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-rose-200 focus:border-rose-300 shadow-sm" />
+                  <input 
+                    type="text" 
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g., Advanced React Patterns" 
+                    className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-rose-200 focus:border-rose-300 shadow-sm" 
+                  />
                </div>
                <div>
                   <label className="block text-[13px] font-bold text-[#111827] mb-3.5 ml-1 text-sm">Body *</label>
                   <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                     <textarea placeholder="Describe" rows={14} className="w-full bg-transparent p-6 text-sm font-medium focus:outline-none resize-none min-h-[400px]" />
+                     <textarea 
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Describe" rows={14} className="w-full bg-transparent p-6 text-sm font-medium focus:outline-none resize-none min-h-[400px]" 
+                     />
                   </div>
                </div>
             </div>
@@ -104,8 +215,12 @@ export default function CreatePostPage() {
             <button className="flex-1 py-3 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-full hover:bg-slate-50 transition-colors shadow-sm">
                Save draft
             </button>
-            <button className="flex-1 py-3 bg-rose-500 text-white text-xs font-bold rounded-full hover:bg-rose-600 transition-colors shadow-sm">
-               Publish
+            <button 
+               onClick={handlePublish}
+               disabled={publishing}
+               className="flex-1 py-3 bg-rose-500 text-white text-xs font-bold rounded-full hover:bg-rose-600 transition-colors shadow-sm disabled:opacity-50"
+            >
+               {publishing ? 'Publishing...' : 'Publish'}
             </button>
          </div>
 
@@ -117,7 +232,7 @@ export default function CreatePostPage() {
                
                <div className="space-y-2.5">
                   {[
-                    { id: 'Everyone', label: 'Everyone', desc: 'Reach new fans' },
+                    { id: 'Everyone', label: 'Everyone', desc: 'Reach new users' },
                     { id: 'Paid', label: 'Free and paid members', desc: 'Showcase membership benefits' },
                     { id: 'MembersOnly', label: 'Free members only', desc: 'Target free members' },
                     { id: 'PublicHidden', label: 'Free members and public visitors', desc: 'Keep hidden from paid members' }
@@ -221,7 +336,7 @@ export default function CreatePostPage() {
                        <div className="flex items-center gap-8 text-[15px] font-bold text-[#1c1917]">
                          <span className="flex items-center gap-2">Starts in : <span className="text-slate-500 font-medium">4Hours</span></span>
                          <span className="flex items-center gap-2">Rating : <span className="text-slate-500 font-medium">3.2/5</span></span>
-                         <span className="flex items-center gap-2">Enrolled : <span className="text-slate-500 font-medium">200 Fans</span></span>
+                         <span className="flex items-center gap-2">Enrolled : <span className="text-slate-500 font-medium">200 Users</span></span>
                        </div>
                        <div className="flex items-center gap-8 text-[15px] font-bold text-[#1c1917]">
                          <span className="flex items-center gap-2">Duration : <span className="text-slate-500 font-medium">1Hour 30Min</span></span>

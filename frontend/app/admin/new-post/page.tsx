@@ -161,7 +161,7 @@ export default function NewPost() {
                 rows={4}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="Tell your fans more about this post..."
+                placeholder="Tell your users more about this post..."
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
                 required
               />
@@ -177,7 +177,7 @@ export default function NewPost() {
               className="w-5 h-5 rounded border-slate-700 text-indigo-500 focus:ring-indigo-500/50 bg-slate-900 accent-indigo-500"
             />
             <label htmlFor="exclusive" className="text-sm font-medium text-indigo-300 cursor-pointer select-none">
-              Make this post exclusive to paying subscribers
+              Make this post exclusive to paying users
             </label>
           </div>
 

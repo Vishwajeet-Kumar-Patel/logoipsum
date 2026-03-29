@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const appUserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
-  role: { type: String, enum: ['Creator', 'User', 'Admin', 'Moderator', 'Premium User'], default: 'User' },
+  role: { type: String, enum: ['creator', 'user', 'admin'], default: 'user' },
   status: { type: String, enum: ['Active', 'Suspended', 'Pending'], default: 'Active' },
   avatar: { type: String },
   joined: { type: String },

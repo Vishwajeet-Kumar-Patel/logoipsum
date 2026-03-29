@@ -2,13 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bell, Library, MessageSquare, Megaphone, Receipt, PlusCircle, PenTool, Video, MoreVertical, LayoutTemplate, X, ChevronDown, History, Search } from 'lucide-react';
+import { Home, Bell, Library, MessageSquare, Megaphone, Receipt, PlusCircle, PenTool, Video, MoreVertical, FileText, X, ChevronDown, History, Search } from 'lucide-react';
 import React, { useState } from 'react';
+import { useAuthStore } from '@/src/store/useAuthStore';
 
 export default function CreatorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [createOpen, setCreateOpen] = useState(true);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const user = useAuthStore((state) => state.user);
 
   const isActive = (path: string) => {
     return pathname === path 
@@ -72,14 +74,13 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
           </div>
         </nav>
 
-        {/* Profile Footer */}
         <div className="px-6 mt-auto">
           <div className="flex justify-between items-center pt-6 border-t border-slate-200/80 cursor-pointer group">
              <div className="flex items-center gap-3">
-               <div className="w-8 h-8 rounded-full bg-slate-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                 K
+               <div className="w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                 {user?.name?.charAt(0) || 'U'}
                </div>
-               <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900">Profile</span>
+               <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 line-clamp-1">{user?.name || 'Profile'}</span>
              </div>
              <MoreVertical className="w-4 h-4 text-slate-400 group-hover:text-slate-600" />
           </div>
@@ -101,7 +102,7 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
                 onClick={() => setPublishModalOpen(true)}
                 className="px-6 py-2 bg-[#d94828] hover:bg-[#c93d1f] text-white text-sm font-bold rounded-full transition-all shadow-md flex items-center gap-2"
               >
-                Publish Now <LayoutTemplate className="w-4 h-4" />
+                Publish Now <FileText className="w-4 h-4" />
               </button>
 
               <div className="h-6 w-px bg-slate-200 mx-2"></div>
@@ -117,11 +118,11 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
                  
                  <div className="flex items-center gap-3 pl-2 group cursor-pointer">
                     <div className="text-right hidden md:block">
-                       <p className="text-sm font-extrabold text-[#1c1917] leading-tight">Isabella V.</p>
-                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Editor in Chef</p>
+                       <p className="text-sm font-extrabold text-[#1c1917] leading-tight capitalize">{user?.name || 'Guest User'}</p>
+                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">{user?.role || 'Creator'}</p>
                     </div>
-                    <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200">
-                       <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" alt="Avatar" className="w-full h-full object-cover" />
+                    <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center text-rose-500 font-bold">
+                       {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
                     </div>
                  </div>
               </div>
