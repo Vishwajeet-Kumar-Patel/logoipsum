@@ -17,6 +17,8 @@ const {
   reactToPost,
   getComments,
   addComment,
+  updateComment,
+  deleteComment,
   getCreatorReviews,
   addCreatorReview,
   getReviewReplies,
@@ -53,6 +55,8 @@ router.post('/follow/:creatorId', toggleFollowCreator);
 // Additional post interactions
 router.post('/posts/:id/react', reactToPost);
 router.post('/posts/:id/comments', addComment);
+router.put('/comments/:commentId', updateComment);
+router.delete('/comments/:commentId', deleteComment);
 
 router.post('/creators/:id/reviews', addCreatorReview);
 

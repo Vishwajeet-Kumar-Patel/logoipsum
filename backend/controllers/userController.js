@@ -162,7 +162,48 @@ exports.getCreatorProfile = async (req, res) => {
 exports.getCreatorPosts = async (req, res) => {
   try {
     const posts = await Post.find({ creatorId: req.params.id, status: 'published' }).sort({ createdAt: -1 });
-    res.json(posts);
+
+    let userId = null;
+
+    if (req.user) {
+      userId = req.user._id;
+    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+        userId = decoded.id;
+      } catch (error) {
+        userId = null;
+      }
+    }
+
+    const enrichedPosts = posts.map((post) => ({
+      ...post.toObject(),
+      userReaction: null,
+      likes: post.likes || 0,
+      dislikes: post.dislikes || 0,
+      comments: post.comments || 0,
+    }));
+
+    if (!userId || posts.length === 0) {
+      return res.json(enrichedPosts);
+    }
+
+    const reactions = await Reaction.find({
+      user: userId,
+      post: { $in: posts.map((post) => post._id) },
+    }).select('post type');
+
+    const reactionByPost = new Map(
+      reactions.map((reaction) => [reaction.post.toString(), reaction.type])
+    );
+
+    res.json(
+      enrichedPosts.map((post) => ({
+        ...post,
+        userReaction: reactionByPost.get(post._id.toString()) || null,
+      }))
+    );
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -426,6 +467,82 @@ exports.addComment = async (req, res) => {
 
     const populatedComment = await Comment.findById(newComment._id).populate('user', 'name avatar');
     res.status(201).json(populatedComment);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    Update a user comment
+// @route   PUT /api/user/comments/:commentId
+// @access  Private
+exports.updateComment = async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ message: 'Comment content is required' });
+    }
+
+    const comment = await Comment.findById(req.params.commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    if (comment.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'You can only edit your own comments' });
+    }
+
+    comment.content = content.trim();
+    await comment.save();
+
+    const populatedComment = await Comment.findById(comment._id).populate('user', 'name avatar');
+    res.json(populatedComment);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    Delete a user comment
+// @route   DELETE /api/user/comments/:commentId
+// @access  Private
+exports.deleteComment = async (req, res) => {
+  try {
+    const comment = await Comment.findById(req.params.commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    if (comment.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'You can only delete your own comments' });
+    }
+
+    const idsToDelete = [comment._id];
+    let parentIds = [comment._id];
+
+    while (parentIds.length > 0) {
+      const childComments = await Comment.find({ parentComment: { $in: parentIds } }).select('_id');
+
+      if (childComments.length === 0) {
+        break;
+      }
+
+      const childIds = childComments.map((child) => child._id);
+      idsToDelete.push(...childIds);
+      parentIds = childIds;
+    }
+
+    const deleteResult = await Comment.deleteMany({ _id: { $in: idsToDelete } });
+    const deletedCount = deleteResult.deletedCount || 0;
+
+    const post = await Post.findById(comment.post);
+    if (post && deletedCount > 0) {
+      post.comments = Math.max(0, (post.comments || 0) - deletedCount);
+      await post.save();
+    }
+
+    res.json({ message: 'Comment deleted', deletedCount });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
