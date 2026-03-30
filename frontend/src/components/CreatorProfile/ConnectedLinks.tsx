@@ -1,12 +1,23 @@
 import Image from 'next/image';
 
-export default function ConnectedLinks() {
+interface ConnectedLinksProps {
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+    tiktok?: string;
+  };
+}
+
+export default function ConnectedLinks({ socialLinks }: ConnectedLinksProps) {
   const links = [
-    { icon: '/assets/creator/instagram.svg', text: '@khushi123hebhjb' },
-    { icon: '/assets/creator/facebook.svg', text: 'hhtpsnjhbdhjbj.com' },
-    { icon: '/assets/creator/twitter.svg', text: 'hhtps.twitterbdhb.com' },
-    { icon: '/assets/creator/tumblr.svg', text: '@sjjbddb245672.com' }
-  ];
+    { icon: '/assets/creator/instagram.svg', text: socialLinks?.instagram || '@khushi123hebhjb', url: socialLinks?.instagram },
+    { icon: '/assets/creator/facebook.svg', text: socialLinks?.facebook || 'facebook.com/creator', url: socialLinks?.facebook },
+    { icon: '/assets/creator/twitter.svg', text: socialLinks?.twitter || 'twitter.com/creator', url: socialLinks?.twitter },
+    { icon: '/assets/creator/tumblr.svg', text: socialLinks?.tiktok || '@tiktokCreator', url: socialLinks?.tiktok }
+  ].filter(link => link.url);
+
+  if (links.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-[12px] items-start shrink-0">

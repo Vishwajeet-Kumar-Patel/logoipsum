@@ -69,7 +69,7 @@ export default function Hero() {
             120K+
           </p>
           <p className="text-[19px] font-semibold tracking-[0.38px] leading-[29px] font-[var(--font-figtree)]">
-            Subscriber
+            Users
           </p>
         </div>
         {/* 1M+ */}

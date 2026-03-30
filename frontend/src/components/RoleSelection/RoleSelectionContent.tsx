@@ -11,10 +11,9 @@ export default function RoleSelectionContent() {
   const [selectedRole, setSelectedRole] = useState<'fan' | 'creator' | null>(null);
 
   const handleContinue = () => {
-    if (selectedRole === 'fan') {
-      router.push('/explore-as-fan/genre-selection');
-    } else if (selectedRole === 'creator') {
-      console.log('Creator flow coming soon');
+    if (selectedRole) {
+      const backendRole = selectedRole === 'fan' ? 'user' : 'creator';
+      router.push(`/signup?role=${backendRole}`);
     }
   };
 

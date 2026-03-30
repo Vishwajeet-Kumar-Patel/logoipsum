@@ -1,14 +1,20 @@
 import Image from 'next/image';
 
-export default function ProfileHeader() {
+interface ProfileHeaderProps {
+  name: string;
+  bio: string;
+  category: string;
+}
+
+export default function ProfileHeader({ name, bio, category }: ProfileHeaderProps) {
   return (
-    <div className="flex flex-col gap-[12px] items-start w-[351px]">
+    <div className="flex flex-col gap-[12px] items-start w-full">
       <div className="flex flex-col gap-[7px] items-start text-[#1a1a1a] w-full">
         <h1 className="font-['Fjalla_One',sans-serif] font-normal leading-[42.1px] text-[28px] tracking-[0.56px]">
-          Andrea Nelson
+          {name}
         </h1>
         <p className="font-['Figtree',sans-serif] font-medium leading-[25.8px] text-[16px] tracking-[0.32px]">
-          Small description about themselves
+          {bio || 'Digital Artist and Photographer'}
         </p>
       </div>
 

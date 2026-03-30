@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 };
 
 import Footer from "../src/components/Footer";
+import { Toaster } from 'react-hot-toast';
 
 export default function RootLayout({
   children,
@@ -45,6 +46,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col font-[var(--font-figtree)]">
+        <Toaster position="bottom-right" />
         <div className="flex-1 shrink-0">{children}</div>
         <Footer />
       </body>

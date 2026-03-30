@@ -1,11 +1,54 @@
 "use client"
 
 import React, { useState } from 'react';
-import { Video, X, Camera, Mic, MicOff, CameraOff, Clock, User, Shield, Image as ImageIcon, MessageSquare, Bell, ShieldCheck, ChevronDown, Check } from 'lucide-react';
+import { Video, X, Camera, Mic, MicOff, CameraOff, Clock, User, Shield, Image as ImageIcon, MessageSquare, Bell, ShieldCheck, ChevronDown, Check, Upload } from 'lucide-react';
+import api from '@/src/lib/api';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 export default function CreateLivestreamPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('Go live now');
   const [audience, setAudience] = useState('All members');
+  
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selected = e.target.files[0];
+      setFile(selected);
+      setPreviewUrl(URL.createObjectURL(selected));
+    }
+  };
+
+  const handleStartLive = async () => {
+    if (!title) return toast.error("Title is required");
+    
+    setPublishing(true);
+    try {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('audience', audience);
+      formData.append('scheduledTime', activeTab === 'Go live now' ? new Date().toISOString() : new Date(Date.now() + 86400000).toISOString());
+      if (file) formData.append('file', file);
+
+      await api.post('/creator/livestreams', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      toast.success("Livestream created!");
+      router.push('/creator');
+    } catch (err) {
+      toast.error("Failed to start live.");
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <div className="flex bg-[#f9f9f9] min-h-screen font-sans">
@@ -47,8 +90,12 @@ export default function CreateLivestreamPage() {
       {/* Right Column: Settings */}
       <aside className="w-[380px] p-8 bg-white overflow-y-auto shrink-0 border-l border-slate-200/60 h-screen sticky top-0 shadow-sm">
          
-         <button className="w-full py-4.5 bg-[#f87171] hover:bg-[#ef4444] text-white text-base font-black rounded-2xl shadow-xl transition-all mb-10 border-b-4 border-[#dc2626]">
-            Start Live
+         <button 
+           onClick={handleStartLive}
+           disabled={publishing}
+           className="w-full py-4.5 bg-[#f87171] hover:bg-[#ef4444] text-white text-base font-black rounded-2xl shadow-xl transition-all mb-10 border-b-4 border-[#dc2626] disabled:opacity-50"
+         >
+            {publishing ? 'Starting...' : 'Start Live'}
          </button>
 
          <div className="space-y-10 pb-20">
@@ -89,8 +136,20 @@ export default function CreateLivestreamPage() {
             <div>
                <h4 className="text-sm font-bold text-[#111827] border-b border-slate-100 pb-5 mb-5 uppercase tracking-widest text-[11px] opacity-60">About this live</h4>
                <div className="space-y-3">
-                  <input type="text" placeholder="Title" className="w-full bg-[#fbfbfb] border border-slate-100 rounded-xl px-5 py-4 text-[13px] font-bold text-[#111827] focus:outline-none focus:ring-1 focus:ring-rose-200" />
-                  <textarea placeholder="Description ( optional )" rows={4} className="w-full bg-[#fbfbfb] border border-slate-100 rounded-xl px-5 py-4 text-[13px] font-bold text-[#111827] focus:outline-none focus:ring-1 focus:ring-rose-200 resize-none" />
+                  <input 
+                    type="text" 
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Title" 
+                    className="w-full bg-[#fbfbfb] border border-slate-100 rounded-xl px-5 py-4 text-[13px] font-bold text-[#111827] focus:outline-none focus:ring-1 focus:ring-rose-200" 
+                  />
+                  <textarea 
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Description ( optional )" 
+                    rows={4} 
+                    className="w-full bg-[#fbfbfb] border border-slate-100 rounded-xl px-5 py-4 text-[13px] font-bold text-[#111827] focus:outline-none focus:ring-1 focus:ring-rose-200 resize-none" 
+                  />
                </div>
             </div>
 
@@ -119,11 +178,18 @@ export default function CreateLivestreamPage() {
             {/* Thumbnail */}
             <div>
                <h4 className="text-sm font-bold text-[#111827] border-b border-slate-100 pb-5 mb-5 uppercase tracking-widest text-[11px] opacity-60">Add a thumbnail</h4>
-               <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm mb-4">
-                  <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80" className="w-full aspect-video object-cover" alt="Thumbnail preview" />
+               <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm mb-4 relative group cursor-pointer" onClick={() => document.getElementById('thumb-upload')?.click()}>
+                  <img src={previewUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80"} className="w-full aspect-video object-cover" alt="Thumbnail preview" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Upload className="w-8 h-8 text-white" />
+                  </div>
                </div>
-               <button className="w-full py-3 bg-[#fbfbfb] border border-slate-100 rounded-xl text-[13px] font-bold text-[#1c1917] hover:bg-white transition-all shadow-sm">
-                  Upload
+               <input id="thumb-upload" type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+               <button 
+                 onClick={() => document.getElementById('thumb-upload')?.click()}
+                 className="w-full py-3 bg-[#fbfbfb] border border-slate-100 rounded-xl text-[13px] font-bold text-[#1c1917] hover:bg-white transition-all shadow-sm"
+               >
+                  {file ? 'Change Thumbnail' : 'Upload'}
                </button>
             </div>
 

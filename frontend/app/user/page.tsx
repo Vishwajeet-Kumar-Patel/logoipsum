@@ -1,10 +1,14 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import DashboardSidebar from '@/src/components/UserDashboard/DashboardSidebar';
 import DashboardHeader from '@/src/components/UserDashboard/DashboardHeader';
 import CategoryPills from '@/src/components/UserDashboard/CategoryPills';
 import CreatorFeed from '@/src/components/UserDashboard/CreatorFeed';
 
 export default function UserDashboard() {
+  const [activeCategory, setActiveCategory] = useState('All');
+
   return (
     <div className="min-h-screen bg-[var(--bg,#f6f4f1)] flex relative overflow-x-hidden">
       <DashboardSidebar />
@@ -13,8 +17,8 @@ export default function UserDashboard() {
       <main className="flex-1 ml-[240px] pl-[42px] pr-[42px] flex flex-col items-start">
         <div className="w-full max-w-[1116px] flex flex-col items-start min-h-screen">
           <DashboardHeader />
-          <CategoryPills />
-          <CreatorFeed />
+          <CategoryPills activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+          <CreatorFeed activeCategory={activeCategory} />
         </div>
       </main>
     </div>

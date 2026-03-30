@@ -1,10 +1,26 @@
 "use client"
+/* eslint-disable @next/next/no-img-element */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import api from '@/src/lib/api';
 import { Camera, Edit, Share, Diamond, Zap, MessageSquare, ArrowLeft, Send, CheckCircle2, ChevronDown, Radio, ChevronRight, ChevronLeft } from 'lucide-react';
 
 export default function CreatorAboutPage() {
+  const [creator, setCreator] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchCreator = async () => {
+       try {
+          const res = await api.get('/creator/dashboard');
+          setCreator(res.data.creator);
+       } catch (err) {
+          console.error("Error fetching creator:", err);
+       }
+    };
+    fetchCreator();
+  }, []);
+
   return (
     <div className="bg-[#fcfbf7] min-h-screen font-sans pb-20">
       
@@ -34,16 +50,16 @@ export default function CreatorAboutPage() {
          
          {/* Hero Image Section */}
          <div className="relative rounded-[48px] overflow-hidden shadow-2xl aspect-[21/9] group">
-            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1600&q=80" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="About Hero" />
+            <img src={creator?.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1600&q=80"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="About Hero" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
          </div>
 
          <div className="flex flex-col items-center text-center space-y-8">
             <h1 className="text-[100px] font-black text-[#1c1917] tracking-tighter leading-tight drop-shadow-sm flex items-center gap-8">
-               <span className="text-[120px]">🎉</span> Hi, I'm Oned
+               <span className="text-[120px]">🎉</span> Hi, I'm {creator?.name?.split(' ')[0] || 'Oned'}
             </h1>
             <p className="text-3xl font-bold text-slate-600 tracking-tight leading-snug max-w-3xl">
-               Welcome to my wonderland. I will be sharing some out of world content in my app. Do watch out for the monthly memberships.
+               {creator?.bio || 'Welcome to my wonderland. I will be sharing some out of world content in my app. Do watch out for the monthly memberships.'}
             </p>
             <button className="px-12 py-4.5 bg-[#f87171] hover:bg-[#ef4444] text-white text-lg font-black rounded-full shadow-2xl transition-all active:scale-95 border-b-4 border-[#dc2626] tracking-tight">
                Brand Enquiry

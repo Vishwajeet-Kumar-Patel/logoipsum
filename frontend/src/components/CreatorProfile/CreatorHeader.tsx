@@ -21,7 +21,7 @@ export default function CreatorHeader() {
             Andrea Nelson
           </p>
           <p className="font-[family-name:var(--font-figtree)] font-medium text-[13px] leading-[18.3px] tracking-[0.26px] text-[var(--body,#5a5a5a)]">
-            Subscribers : 128k
+            Users : 128k
           </p>
         </div>
       </div>

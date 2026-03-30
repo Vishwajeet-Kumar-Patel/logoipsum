@@ -1,34 +1,50 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-const mockPosts = Array.from({ length: 4 }).map((_, i) => ({
-  id: i,
-  thumbnail: '/assets/creator/thumbnail.png',
-  isLocked: true,
-  title: 'Design That Feels Effortless',
-  date: '23 Jan, 2025',
-  likes: '1.2k',
-  comments: '40'
-}));
+import React, { useEffect, useState } from 'react';
+import api from '@/src/lib/api';
 
-export default function ProfileContentFeed() {
+interface ProfileContentFeedProps {
+  creatorId: string;
+}
+
+export default function ProfileContentFeed({ creatorId }: ProfileContentFeedProps) {
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await api.get(`/user/creators/${creatorId}/posts`);
+        setPosts(res.data);
+      } catch (err) {
+        console.error("Error fetching creator posts:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (creatorId) fetchPosts();
+  }, [creatorId]);
+
+  if (loading) return <div className="p-10 text-center w-full">Loading posts...</div>;
+
   return (
-    <div className="grid grid-cols-4 gap-[16px] w-full max-w-full">
-      {mockPosts.map((post) => (
-        <Link href="/user/creator/post" key={post.id} className="flex flex-1 flex-col gap-[12px] items-start min-w-[267px] shrink-0">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[16px] w-full max-w-full">
+      {posts.map((post) => (
+        <Link href={`/user/posts/${post._id}`} key={post._id} className="flex flex-col gap-[12px] items-start shrink-0">
           
           <div className="flex flex-col h-[200px] items-start justify-end overflow-hidden p-[12px] relative rounded-[12px] w-full">
             <div aria-hidden="true" className="absolute inset-0 pointer-events-none rounded-[12px]">
               <div className="absolute bg-[#ebebeb] inset-0 rounded-[12px]" />
               <Image 
-                src={post.thumbnail} 
-                alt="Thumbnail" 
+                src={post.mediaUrl || '/assets/creator/thumbnail.png'} 
+                alt={post.title} 
                 fill 
                 className="object-cover" 
               />
             </div>
             
-            {post.isLocked && (
+            {post.isExclusive && (
               <div className="bg-[rgba(26,26,26,0.5)] flex gap-[4px] items-center justify-center px-[8px] py-[4px] relative rounded-[32px] shrink-0 backdrop-blur-sm">
                 <Image src="/assets/creator/lock.svg" alt="Locked" width={16} height={16} className="shrink-0 size-[16px]" />
                 <p className="font-['Comfortaa',sans-serif] font-semibold leading-[18.3px] text-[11px] text-white tracking-[0.22px] whitespace-nowrap">
@@ -48,7 +64,7 @@ export default function ProfileContentFeed() {
             <div className="flex gap-[12px] items-center text-[#9a9a9a]">
               <div className="flex items-center">
                 <p className="font-['Figtree',sans-serif] font-medium leading-[18.3px] text-[13px] tracking-[0.26px] whitespace-nowrap">
-                  {post.date}
+                  {new Date(post.createdAt).toLocaleDateString()}
                 </p>
               </div>
               <div className="flex gap-[4px] items-center justify-center">
@@ -69,6 +85,7 @@ export default function ProfileContentFeed() {
           
         </Link>
       ))}
+      {posts.length === 0 && <div className="col-span-full p-20 text-center italic text-zinc-500">No posts shared yet.</div>}
     </div>
   );
 }

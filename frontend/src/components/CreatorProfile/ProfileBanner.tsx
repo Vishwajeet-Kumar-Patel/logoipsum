@@ -1,12 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function ProfileBanner() {
+export default function ProfileBanner({ bannerUrl }: { bannerUrl: string }) {
   return (
     <div className="relative w-full h-[240px] overflow-hidden shrink-0">
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
         <Image 
-          src="/assets/creator/banner.png" 
+          src={bannerUrl} 
           alt="Creator Banner"
           fill
           className="object-cover opacity-60"

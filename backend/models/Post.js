@@ -5,9 +5,12 @@ const postSchema = mongoose.Schema(
     title: { type: String, required: true },
     description: { type: String, default: '' },
     mediaUrl: { type: String, required: true },
-    mediaType: { type: String, enum: ['image', 'video'], required: true },
+    mediaType: { type: String, enum: ['image', 'video', 'link', 'file', 'livestream'], required: true },
     isExclusive: { type: Boolean, default: false },
     creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Creator', required: true },
+    status: { type: String, enum: ['draft', 'published', 'scheduled', 'archived'], default: 'published' },
+    category: { type: String, enum: ['content', 'insight', 'payout', 'other'], default: 'content' },
+    price: { type: Number, default: 0 },
     
     // Engagement
     views: { type: Number, default: 0 },
@@ -16,8 +19,11 @@ const postSchema = mongoose.Schema(
     
     // Earnings breakdown
     revenue: {
-      subscription: { type: Number, default: 0 },
-      exclusive: { type: Number, default: 0 },
+      total: { type: Number, default: 0 },
+      breakdown: {
+         subscriptionPay: { type: Number, default: 0 },
+         directPurchase: { type: Number, default: 0 }
+      }
     }
   },
   { timestamps: true }

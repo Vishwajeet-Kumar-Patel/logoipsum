@@ -1,13 +1,44 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LogIn, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
+import api from "@/src/lib/api";
+import { useAuthStore } from "@/src/store/useAuthStore";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const login = useAuthStore((state) => state.login);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+        const res = await api.post('/auth/login', { email, password });
+        login(res.data);
+        toast.success(`Welcome back, ${res.data.name}!`);
+        
+        // RBAC Redirection
+        if (res.data.role === 'creator') router.push('/creator');
+        else if (res.data.role === 'admin') router.push('/admin');
+        else router.push('/user');
+    } catch (err: any) {
+        toast.error(err.response?.data?.message || "Login failed");
+    } finally {
+        setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#f6f4f1] p-6 sm:p-10 lg:p-16 w-full flex items-center justify-center">
+    <div className="min-h-screen bg-[#f6f4f1] p-6 sm:p-10 lg:p-16 w-full flex items-center justify-center" suppressHydrationWarning>
       <div className="w-full max-w-[1440px] flex flex-col lg:flex-row gap-8 lg:gap-12 min-h-[calc(100vh-128px)]">
         
         {/* Left Content Area */}
@@ -16,57 +47,79 @@ export default function LoginPage() {
           {/* Logo Placeholder */}
           <Link href="/" className="flex items-center gap-2 mb-4">
             <div className="flex text-[#ff4c24] items-center text-[28px] tracking-tight font-bold">
-              <span className="text-3xl">🛡</span> {/* Mock logo icon */}
+              <span className="text-3xl">🛡</span>
               <span style={{ fontFamily: "'Fjalla One', sans-serif" }}>Renown</span>
             </div>
           </Link>
 
           {/* Heading */}
           <div className="flex flex-col items-center justify-center text-center gap-2">
-            <h1
-              className="text-[#1a1a1a] text-[32px] sm:text-[40px] tracking-[0.8px] leading-tight"
-              style={{ fontFamily: "'Fjalla One', sans-serif" }}
-            >
-              Make you own Fan Base
+            <h1 className="text-[#1a1a1a] text-[32px] sm:text-[40px] tracking-[0.8px] leading-tight font-['Fjalla_One'] uppercase">
+              Welcome Back
             </h1>
-            <p
-              className="text-[#3a3a3a] text-sm sm:text-base font-medium tracking-[0.32px] leading-[26px] max-w-[400px]"
-              style={{ fontFamily: "'Figtree', sans-serif" }}
-            >
-              This website empowers creators and influencers to turn their passion into carreer
+            <p className="text-[#3a3a3a] text-sm sm:text-base font-medium font-['Figtree'] max-w-[400px]">
+              Log in to manage your fan base and settings.
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 mt-6">
-            {/* Log In Button */}
-            <Link
-              href="/signup"
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-[#ff9465] text-[#f6f4f1] shadow-[8px_8px_20px_0px_rgba(69,9,0,0.35)] transition-transform hover:scale-105 active:scale-95"
-              style={{
-                background: "linear-gradient(131.5deg, #e14517 57.5%, #d6361f 100%)",
-                fontFamily: "'Lexend', sans-serif",
-              }}
-            >
-              <span>Log in</span>
-              <LogIn className="w-5 h-5 ml-1" />
-            </Link>
+          {/* Login Form */}
+          <form className="w-full max-w-[400px] flex flex-col gap-6" onSubmit={handleLogin}>
+            <div className="flex flex-col gap-2">
+               <label className="text-[20px] font-bold text-[#1a1a1a] font-['Fjalla_One'] uppercase tracking-tight">Email</label>
+               <input 
+                 type="email"
+                 value={email}
+                 onChange={(e) => setEmail(e.target.value)}
+                 required
+                 placeholder="your@email.com"
+                 className="w-full bg-[#faf8f5] border border-[#d8d1c7] rounded-full px-6 py-4 outline-none focus:border-[#e14517] transition-all"
+               />
+            </div>
 
-            {/* Sign Up Button */}
-            <Link
-              href="/signup"
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-[#ff9465] text-[#1a1a1a] bg-[#f6f4f1] shadow-[8px_8px_20px_0px_rgba(69,9,0,0.16)] transition-transform hover:scale-105 active:scale-95"
-              style={{ fontFamily: "'Lexend', sans-serif" }}
-            >
-              <span>Sign up</span>
-              <UserPlus className="w-5 h-5 ml-1" />
-            </Link>
-          </div>
+            <div className="flex flex-col gap-2">
+               <label className="text-[20px] font-bold text-[#1a1a1a] font-['Fjalla_One'] uppercase tracking-tight">Password</label>
+               <div className="relative">
+                 <input 
+                   type={showPassword ? "text" : "password"}
+                   value={password}
+                   onChange={(e) => setPassword(e.target.value)}
+                   required
+                   placeholder="********"
+                   className="w-full bg-[#faf8f5] border border-[#d8d1c7] rounded-full px-6 py-4 outline-none focus:border-[#e14517] transition-all"
+                 />
+                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400">
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                 </button>
+               </div>
+            </div>
 
+            <div className="flex flex-col gap-4 mt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex items-center justify-center gap-2 px-6 py-4 rounded-full border border-[#ff9465] text-[#f6f4f1] shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                style={{
+                  background: "linear-gradient(131.5deg, #e14517 57.5%, #d6361f 100%)",
+                  fontFamily: "'Lexend', sans-serif",
+                }}
+              >
+                <span>{loading ? "Logging in..." : "Log in"}</span>
+                <LogIn className="w-5 h-5 ml-1" />
+              </button>
+
+              <Link
+                href="/role-selection"
+                className="flex items-center justify-center gap-2 px-6 py-4 rounded-full border border-[#d8d1c7] text-[#1a1a1a] bg-white shadow-sm transition-all hover:bg-slate-50"
+              >
+                <span>Don&apos;t have an account? Sign up</span>
+                <UserPlus className="w-5 h-5 ml-1" />
+              </Link>
+            </div>
+          </form>
         </div>
 
         {/* Right Image Area */}
-        <div className="flex-1 w-full h-[500px] lg:h-auto rounded-[16px] border border-[#e4ded2] overflow-hidden relative shadow-sm">
+        <div className="flex-1 w-full min-h-[500px] lg:h-full rounded-[16px] border border-[#e4ded2] overflow-hidden relative shadow-sm">
           <Image
             src="/assets/images/Frame 2121453719.png"
             alt="Creators Fan Base"
