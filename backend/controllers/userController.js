@@ -1,6 +1,9 @@
 const User = require('../models/User');
 const Creator = require('../models/Creator');
 const Post = require('../models/Post');
+const Reaction = require('../models/Reaction');
+const Comment = require('../models/Comment');
+const jwt = require('jsonwebtoken');
 
 // @desc    Get all creators for discovery
 // @route   GET /api/user/creators
@@ -82,7 +85,36 @@ exports.getPostDetails = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id).populate('creatorId');
     if (!post) return res.status(404).json({ message: 'Post not found' });
-    res.json(post);
+    
+    let userReaction = null;
+    let userId = null;
+
+    // Check if user is authenticated (can be guest)
+    if (req.user) {
+      userId = req.user._id;
+    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+        userId = decoded.id;
+      } catch (e) {
+        // Token invalid, ignore
+      }
+    }
+
+    if (userId) {
+      const reaction = await Reaction.findOne({ user: userId, post: post._id });
+      if (reaction) {
+        userReaction = reaction.type;
+      }
+    }
+
+    res.json({
+      ...post.toObject(),
+      userReaction,
+      likes: post.likes || 0,
+      dislikes: post.dislikes || 0
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -112,6 +144,102 @@ exports.searchCreators = async (req, res) => {
       ]
     });
     res.json(creators);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    React to a post
+// @route   POST /api/user/posts/:id/react
+exports.reactToPost = async (req, res) => {
+  try {
+    const { type } = req.body; // 'like' or 'dislike'
+    if (!['like', 'dislike'].includes(type)) {
+      return res.status(400).json({ message: 'Invalid reaction type' });
+    }
+
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const existingReaction = await Reaction.findOne({ user: req.user._id, post: post._id });
+
+    if (!existingReaction) {
+      // Create new reaction
+      await Reaction.create({ user: req.user._id, post: post._id, type });
+      if (type === 'like') {
+        post.likes += 1;
+      } else {
+        post.dislikes = (post.dislikes || 0) + 1;
+      }
+      await post.save();
+      return res.json({ likes: post.likes, dislikes: post.dislikes, userReaction: type });
+    }
+
+    if (existingReaction.type === type) {
+      // Toggle off
+      await Reaction.findByIdAndDelete(existingReaction._id);
+      if (type === 'like') {
+        post.likes = Math.max(0, post.likes - 1);
+      } else {
+        post.dislikes = Math.max(0, (post.dislikes || 0) - 1);
+      }
+      await post.save();
+      return res.json({ likes: post.likes, dislikes: post.dislikes, userReaction: null });
+    }
+
+    // Switch type
+    await Reaction.findByIdAndUpdate(existingReaction._id, { type });
+    if (type === 'like') {
+      post.likes += 1;
+      post.dislikes = Math.max(0, (post.dislikes || 0) - 1);
+    } else {
+      post.dislikes = (post.dislikes || 0) + 1;
+      post.likes = Math.max(0, post.likes - 1);
+    }
+    await post.save();
+    return res.json({ likes: post.likes, dislikes: post.dislikes, userReaction: type });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    Get comments for a post
+// @route   GET /api/user/posts/:id/comments
+exports.getComments = async (req, res) => {
+  try {
+    const comments = await Comment.find({ post: req.params.id })
+      .populate('user', 'name')
+      .sort({ createdAt: -1 });
+    res.json(comments);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    Add a comment to a post
+// @route   POST /api/user/posts/:id/comments
+exports.addComment = async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ message: 'Comment content is required' });
+    }
+
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const newComment = await Comment.create({
+      user: req.user._id,
+      post: post._id,
+      content: content.trim()
+    });
+
+    post.comments = (post.comments || 0) + 1;
+    await post.save();
+
+    const populatedComment = await Comment.findById(newComment._id).populate('user', 'name');
+    res.status(201).json(populatedComment);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

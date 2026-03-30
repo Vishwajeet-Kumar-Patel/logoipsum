@@ -6,6 +6,8 @@ import PostHeader from '@/src/components/CreatorPost/PostHeader';
 import PostHeroImage from '@/src/components/CreatorPost/PostHeroImage';
 import PostMetadata from '@/src/components/CreatorPost/PostMetadata';
 import PostDetails from '@/src/components/CreatorPost/PostDetails';
+import InteractionBar from '@/src/components/CreatorPost/InteractionBar';
+import CommentsSection from '@/src/components/CreatorPost/CommentsSection';
 import RelatedCreators from '@/src/components/CreatorPost/RelatedCreators';
 import api from '@/src/lib/api';
 
@@ -58,6 +60,15 @@ export default function UserPostDetailPage({ params }: { params: Promise<{ id: s
           />
           
           <PostDetails description={post.description} />
+          
+          <InteractionBar 
+            postId={post._id} 
+            initialLikes={post.likes} 
+            initialDislikes={post.dislikes} 
+            initialUserReaction={post.userReaction} 
+          />
+
+          <CommentsSection postId={post._id} />
           
           <RelatedCreators />
           

@@ -10,6 +10,9 @@ const {
   getFollowingCreators,
   searchCreators,
   getLiveStreams,
+  reactToPost,
+  getComments,
+  addComment
 } = require('../controllers/userController');
 
 const {
@@ -31,5 +34,10 @@ router.post('/messages', sendMessage);
 router.get('/following', getFollowingCreators);
 router.post('/follow/:creatorId', toggleFollowCreator);
 router.get('/posts/:id', getPostDetails);
+
+// Additional post interactions
+router.post('/posts/:id/react', reactToPost);
+router.get('/posts/:id/comments', getComments);
+router.post('/posts/:id/comments', addComment);
 
 module.exports = router;
