@@ -6,6 +6,8 @@ interface PostHeroImageProps {
   mediaType?: 'image' | 'video';
   thumbnailUrl?: string;
   isExclusive?: boolean;
+  accessTier?: 'everyone' | 'members_only' | 'exclusive_paid';
+  price?: number;
   hasAccess?: boolean;
   onUnlockClick?: () => void;
 }
@@ -15,6 +17,8 @@ export default function PostHeroImage({
   mediaType = 'image',
   thumbnailUrl,
   isExclusive = false, 
+  accessTier = 'members_only',
+  price = 0,
   hasAccess = true,
   onUnlockClick
 }: PostHeroImageProps) {
@@ -56,10 +60,12 @@ export default function PostHeroImage({
             <Lock className="text-white size-[32px]" strokeWidth={2.5} />
           </div>
           <h3 className="text-white font-['Figtree',sans-serif] text-xl font-bold mb-2 drop-shadow-md">
-            Exclusive Content
+            {accessTier === 'exclusive_paid' ? 'Exclusive Paid Content' : 'Members-Only Content'}
           </h3>
           <p className="text-white/90 font-['Figtree',sans-serif] text-sm mb-6 max-w-[300px] drop-shadow-sm">
-            Join the creator's membership to unlock this post and all other premium content.
+            {accessTier === 'exclusive_paid'
+              ? `Purchase this post for $${Number(price || 0).toFixed(2)} to unlock access.`
+              : "Join the creator's membership to unlock this post and all other premium content."}
           </p>
           <button 
             onClick={(e) => {
@@ -68,7 +74,7 @@ export default function PostHeroImage({
             }}
             className="bg-[#f95c4b] hover:bg-[#ff7a6c] text-white px-8 py-3 rounded-full font-bold text-[14px] shadow-lg transition-all active:scale-95 border border-white/20"
           >
-            Join Membership to Unlock
+            {accessTier === 'exclusive_paid' ? `Buy for $${Number(price || 0).toFixed(2)}` : 'Join Membership to Unlock'}
           </button>
         </div>
       )}

@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 export default function CreatePostPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('Upload images, videos, audio');
-  const [audience, setAudience] = useState('Everyone');
+   const [audience, setAudience] = useState<'everyone' | 'members_only' | 'exclusive_paid'>('everyone');
   const [previewOpen, setPreviewOpen] = useState(false);
   
   const [title, setTitle] = useState('');
@@ -17,6 +17,7 @@ export default function CreatePostPage() {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
+   const [sellingPrice, setSellingPrice] = useState('');
   const [publishing, setPublishing] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,6 +38,11 @@ export default function CreatePostPage() {
       return;
     }
 
+      if (audience === 'exclusive_paid' && (!sellingPrice || Number(sellingPrice) <= 0)) {
+         toast.error('Enter a valid selling price for exclusive content');
+         return;
+      }
+
     setPublishing(true);
     try {
       const formData = new FormData();
@@ -56,7 +62,9 @@ export default function CreatePostPage() {
       }
 
       formData.append('mediaType', mediaType);
-      formData.append('isExclusive', String(audience !== 'Everyone'));
+      formData.append('accessTier', audience);
+      formData.append('isExclusive', String(audience !== 'everyone'));
+      formData.append('price', audience === 'exclusive_paid' ? String(Number(sellingPrice)) : '0');
 
       await api.post('/creator/posts', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -232,14 +240,13 @@ export default function CreatePostPage() {
                
                <div className="space-y-2.5">
                   {[
-                    { id: 'Everyone', label: 'Everyone', desc: 'Reach new users' },
-                    { id: 'Paid', label: 'Free and paid members', desc: 'Showcase membership benefits' },
-                    { id: 'MembersOnly', label: 'Free members only', desc: 'Target free members' },
-                    { id: 'PublicHidden', label: 'Free members and public visitors', desc: 'Keep hidden from paid members' }
+                              { id: 'everyone', label: 'Everyone', desc: 'Free to access for all users' },
+                              { id: 'members_only', label: 'Members only', desc: 'Only paid channel members can access' },
+                              { id: 'exclusive_paid', label: 'Exclusive content', desc: 'All users must pay separately to access' }
                   ].map((opt) => (
                     <div 
                       key={opt.id} 
-                      onClick={() => setAudience(opt.id)}
+                                 onClick={() => setAudience(opt.id as 'everyone' | 'members_only' | 'exclusive_paid')}
                       className={`flex items-start gap-4 p-4.5 rounded-2xl border cursor-pointer transition-all ${audience === opt.id ? 'border-rose-500 bg-rose-50/20' : 'border-slate-100 bg-[#fbfbfb] hover:bg-slate-50'}`}
                     >
                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-1 shrink-0 ${audience === opt.id ? 'border-rose-500' : 'border-slate-300'}`}>
@@ -252,17 +259,20 @@ export default function CreatePostPage() {
                     </div>
                   ))}
                </div>
-
-               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-10 mb-5 ml-1">Paid access</p>
-               <div className={`flex items-start gap-4 p-5 rounded-2xl border border-slate-100 bg-[#fbfbfb] cursor-pointer hover:bg-slate-50 transition-all`}>
-                  <div className="w-5 h-5 rounded-full border-2 border-slate-300 mt-1 shrink-0"></div>
-                  <p className="text-[13px] font-bold text-[#111827] leading-relaxed">Limit access to paid members and people who purchase this post</p>
-               </div>
                
                <div className="mt-5">
                   <div className="relative">
                     <span className="absolute left-4 top-3.5 text-[14px] font-bold text-slate-400">$</span>
-                    <input type="text" placeholder="Enter selling price" className="w-full bg-[#fcfcfc] border border-slate-100 rounded-xl pl-10 pr-4 py-3.5 text-[14px] font-bold text-[#111827] focus:outline-none focus:ring-1 focus:ring-rose-200 shadow-sm" />
+                              <input
+                                 type="number"
+                                 min="0"
+                                 step="0.01"
+                                 value={sellingPrice}
+                                 onChange={(e) => setSellingPrice(e.target.value)}
+                                 disabled={audience !== 'exclusive_paid'}
+                                 placeholder={audience === 'exclusive_paid' ? 'Enter selling price' : 'Price enabled for Exclusive content'}
+                                 className="w-full bg-[#fcfcfc] border border-slate-100 rounded-xl pl-10 pr-4 py-3.5 text-[14px] font-bold text-[#111827] focus:outline-none focus:ring-1 focus:ring-rose-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                              />
                   </div>
                </div>
             </div>

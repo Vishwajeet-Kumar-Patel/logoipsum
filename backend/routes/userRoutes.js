@@ -25,7 +25,8 @@ const {
   addReviewReply,
   toggleFavoritePost,
   getFavoritePosts,
-  toggleSubscription
+  toggleSubscription,
+  purchaseExclusivePost
 } = require('../controllers/userController');
 
 const {
@@ -73,6 +74,7 @@ router.post('/subscribe/:creatorId', toggleSubscription);
 // Additional post interactions
 router.post('/posts/:id/react', reactToPost);
 router.post('/posts/:id/favorite', toggleFavoritePost);
+router.post('/posts/:id/purchase-exclusive', purchaseExclusivePost);
 router.get('/favorites', getFavoritePosts);
 router.post('/posts/:id/comments', addComment);
 router.put('/comments/:commentId', updateComment);

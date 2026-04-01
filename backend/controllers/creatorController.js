@@ -277,7 +277,13 @@ const createPost = async (req, res) => {
         thumbnailUrl = req.body.thumbnailUrl;
       }
 
-      const { title, description, mediaType, isExclusive, status, category, price } = req.body;
+      const { title, description, mediaType, isExclusive, accessTier, status, category, price } = req.body;
+
+      const normalizedAccessTier = ['everyone', 'members_only', 'exclusive_paid'].includes(accessTier)
+        ? accessTier
+        : (isExclusive === 'true' || isExclusive === true ? 'members_only' : 'everyone');
+      const parsedPrice = parseFloat(price || 0);
+      const resolvedPrice = normalizedAccessTier === 'exclusive_paid' ? Math.max(parsedPrice, 0) : 0;
       
       const realMediaType = mediaType || (req.files?.file?.[0]?.mimetype?.startsWith('video/') ? 'video' : 'image');
 
@@ -292,10 +298,11 @@ const createPost = async (req, res) => {
         mediaType: realMediaType,
         mediaUrl: mediaUrl || 'https://via.placeholder.com/600',
         thumbnailUrl: thumbnailUrl || (realMediaType === 'image' ? mediaUrl : 'https://via.placeholder.com/600'),
-        isExclusive: isExclusive === 'true' || isExclusive === true,
+        isExclusive: normalizedAccessTier !== 'everyone',
+        accessTier: normalizedAccessTier,
         status: status || 'published',
         category: category || 'content',
-        price: parseFloat(price || 0),
+        price: resolvedPrice,
         creatorId: creator._id,
         views: 0,
         likes: 0,
@@ -329,8 +336,26 @@ const updatePost = async (req, res) => {
         if (updateData.isExclusive !== undefined) {
           updateData.isExclusive = updateData.isExclusive === 'true' || updateData.isExclusive === true;
         }
+        if (updateData.accessTier !== undefined) {
+          const allowedTiers = ['everyone', 'members_only', 'exclusive_paid'];
+          if (!allowedTiers.includes(updateData.accessTier)) {
+            delete updateData.accessTier;
+          }
+        }
         if (updateData.price !== undefined) {
           updateData.price = parseFloat(updateData.price || 0);
+        }
+
+        if (!updateData.accessTier && updateData.isExclusive !== undefined) {
+          updateData.accessTier = updateData.isExclusive ? 'members_only' : 'everyone';
+        }
+
+        if (updateData.accessTier === 'everyone' || updateData.accessTier === 'members_only') {
+          updateData.price = 0;
+        }
+
+        if (updateData.accessTier !== undefined) {
+          updateData.isExclusive = updateData.accessTier !== 'everyone';
         }
 
         const processUpload = async (file, folder) => {

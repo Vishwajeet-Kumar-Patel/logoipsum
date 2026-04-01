@@ -54,6 +54,28 @@ export default function UserPostDetailPage({ params }: { params: Promise<{ id: s
       fetchPost();
   };
 
+  const handleUnlockClick = async () => {
+    if (post.accessTier === 'members_only') {
+      setIsMemModalOpen(true);
+      return;
+    }
+
+    if (post.accessTier === 'exclusive_paid') {
+      const creatorNameForPrompt = post.creatorId?.name || 'this creator';
+      const message = `Do you want to purchase ${creatorNameForPrompt} exclusive content?`;
+      const accepted = window.confirm(message);
+      if (!accepted) return;
+
+      try {
+        await api.post(`/user/posts/${id}/purchase-exclusive`);
+        toast.success('Exclusive content unlocked successfully');
+        handleUnlockSuccess();
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || 'Unable to purchase exclusive content');
+      }
+    }
+  };
+
   if (loading) return <div className="min-h-screen bg-[#f6f4f1] flex items-center justify-center">Loading...</div>;
   if (!post) return <div className="min-h-screen bg-[#f6f4f1] flex items-center justify-center">Post not found.</div>;
 
@@ -81,8 +103,10 @@ export default function UserPostDetailPage({ params }: { params: Promise<{ id: s
             mediaType={post.mediaType} 
             thumbnailUrl={post.thumbnailUrl} 
             isExclusive={post.isExclusive}
+            accessTier={post.accessTier}
+            price={post.price}
             hasAccess={post.hasAccess}
-            onUnlockClick={() => setIsMemModalOpen(true)}
+            onUnlockClick={handleUnlockClick}
           />
           
           <PostMetadata 
@@ -96,7 +120,16 @@ export default function UserPostDetailPage({ params }: { params: Promise<{ id: s
             onFavoriteToggle={handleFavoriteToggle}
           />
           
-          <PostDetails description={post.hasAccess ? post.description : "This content is exclusive to members."} />
+          <PostDetails
+            description={
+              post.hasAccess
+                ? post.description
+                : post.accessTier === 'exclusive_paid'
+                  ? 'This is exclusive paid content. Purchase to unlock and view the full post.'
+                  : 'This content is available to members only. Join membership to unlock.'
+            }
+          />
+          
           
           {post.hasAccess && (
             <InteractionBar 

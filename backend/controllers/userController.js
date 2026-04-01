@@ -6,12 +6,34 @@ const Comment = require('../models/Comment');
 const Review = require('../models/Review');
 const ReviewReply = require('../models/ReviewReply');
 const Notification = require('../models/Notification');
+const Wallet = require('../models/Wallet');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const streamifier = require('streamifier');
 const cloudinary = require('../utils/cloudinary');
 
 const profileUpload = multer({ storage: multer.memoryStorage() }).single('avatar');
+
+const getPostAccessInfo = ({ post, memberships = [], userId = null }) => {
+  const tier = post.accessTier || (post.isExclusive ? 'members_only' : 'everyone');
+  const creatorIdValue = (post.creatorId && post.creatorId._id)
+    ? post.creatorId._id.toString()
+    : post.creatorId.toString();
+  const isMember = memberships.some((mId) => mId.toString() === creatorIdValue);
+  const hasPurchased = userId
+    ? (post.purchasedUsers || []).some((id) => id.toString() === userId.toString())
+    : false;
+
+  if (tier === 'everyone') {
+    return { hasAccess: true, accessTier: 'everyone', requiresPurchase: false, hasPurchased };
+  }
+
+  if (tier === 'members_only') {
+    return { hasAccess: isMember, accessTier: 'members_only', requiresPurchase: false, hasPurchased };
+  }
+
+  return { hasAccess: hasPurchased, accessTier: 'exclusive_paid', requiresPurchase: true, hasPurchased };
+};
 
 // @desc    Get notifications for logged-in user
 // @route   GET /api/user/notifications
@@ -229,10 +251,13 @@ exports.getCreatorPosts = async (req, res) => {
     }
 
     const filteredPosts = posts.map(post => {
-      const hasAccess = !post.isExclusive || memberships.some(mId => mId.toString() === post.creatorId.toString());
+      const accessInfo = getPostAccessInfo({ post, memberships, userId });
       return {
         ...post.toObject(),
-        hasAccess,
+        hasAccess: accessInfo.hasAccess,
+        accessTier: accessInfo.accessTier,
+        requiresPurchase: accessInfo.requiresPurchase,
+        hasPurchased: accessInfo.hasPurchased,
         likes: post.likes || 0,
         dislikes: post.dislikes || 0,
         commentsCount: post.comments || 0,
@@ -319,7 +344,7 @@ exports.getPostDetails = async (req, res) => {
     }
 
     let isFavorited = false;
-    let hasAccess = !post.isExclusive;
+    let accessInfo = getPostAccessInfo({ post, memberships: [], userId: null });
     
     if (userId) {
       // Increment views and track unique viewers
@@ -338,9 +363,7 @@ exports.getPostDetails = async (req, res) => {
         if (user.favorites && user.favorites.some(favId => favId && favId.toString() === post._id.toString())) {
           isFavorited = true;
         }
-        if (post.isExclusive && user.memberships && user.memberships.some(mId => mId.toString() === post.creatorId._id.toString())) {
-          hasAccess = true;
-        }
+        accessInfo = getPostAccessInfo({ post, memberships: user.memberships || [], userId });
       }
     } else {
       // For guests
@@ -351,7 +374,10 @@ exports.getPostDetails = async (req, res) => {
       ...post.toObject(),
       userReaction,
       isFavorited,
-      hasAccess,
+      hasAccess: accessInfo.hasAccess,
+      accessTier: accessInfo.accessTier,
+      requiresPurchase: accessInfo.requiresPurchase,
+      hasPurchased: accessInfo.hasPurchased,
       likes: post.likes || 0,
       dislikes: post.dislikes || 0
     });
@@ -698,6 +724,85 @@ exports.toggleSubscription = async (req, res) => {
     await user.save();
     await creator.save();
     res.json({ success: true, isMember: !isMember });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    Purchase exclusive post content
+// @route   POST /api/user/posts/:id/purchase-exclusive
+// @access  Private
+exports.purchaseExclusivePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id).populate('creatorId');
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const tier = post.accessTier || (post.isExclusive ? 'members_only' : 'everyone');
+    if (tier !== 'exclusive_paid') {
+      return res.status(400).json({ message: 'This post does not require exclusive purchase.' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const alreadyPurchased = (post.purchasedUsers || []).some(
+      (id) => id.toString() === req.user._id.toString()
+    );
+
+    if (alreadyPurchased) {
+      return res.json({ success: true, hasAccess: true, message: 'Already purchased' });
+    }
+
+    const price = Number(post.price || 0);
+    if (price <= 0) {
+      return res.status(400).json({ message: 'Invalid exclusive content price.' });
+    }
+
+    const wallet = await Wallet.findOneAndUpdate(
+      { userId: req.user._id, balance: { $gte: price } },
+      {
+        $inc: { balance: -price },
+        $push: {
+          transactions: {
+            amount: price,
+            type: 'debit',
+            referenceId: post._id.toString(),
+            status: 'success',
+            createdAt: new Date()
+          }
+        },
+        $set: { updatedAt: new Date() }
+      },
+      { new: true }
+    );
+
+    if (!wallet) {
+      return res.status(400).json({ message: 'Insufficient wallet balance. Please add funds.' });
+    }
+
+    await Post.findByIdAndUpdate(post._id, {
+      $addToSet: { purchasedUsers: req.user._id },
+      $inc: {
+        'revenue.total': price,
+        'revenue.breakdown.directPurchase': price
+      }
+    });
+
+    if (post.creatorId?._id) {
+      await Creator.findByIdAndUpdate(post.creatorId._id, {
+        $inc: {
+          'earnings.total': price,
+          'earnings.thisMonth': price
+        }
+      });
+    }
+
+    return res.json({
+      success: true,
+      hasAccess: true,
+      newBalance: wallet.balance,
+      message: 'Exclusive content purchased successfully.'
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

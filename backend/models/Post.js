@@ -8,10 +8,16 @@ const postSchema = mongoose.Schema(
     thumbnailUrl: { type: String, default: '' },
     mediaType: { type: String, enum: ['image', 'video', 'link', 'file', 'livestream'], required: true },
     isExclusive: { type: Boolean, default: false },
+    accessTier: {
+      type: String,
+      enum: ['everyone', 'members_only', 'exclusive_paid'],
+      default: 'everyone'
+    },
     creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Creator', required: true },
     status: { type: String, enum: ['draft', 'published', 'scheduled', 'archived'], default: 'published' },
     category: { type: String, enum: ['content', 'insight', 'payout', 'other'], default: 'content' },
     price: { type: Number, default: 0 },
+    purchasedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     
     // Engagement
     views: { type: Number, default: 0 },

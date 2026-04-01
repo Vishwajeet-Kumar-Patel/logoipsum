@@ -8,6 +8,8 @@ interface Post {
   title: string;
   description: string;
   mediaUrl: string;
+  thumbnailUrl?: string;
+  mediaType?: 'image' | 'video' | 'link' | 'file' | 'livestream';
   creatorId: {
     _id: string;
     name: string;
@@ -25,6 +27,20 @@ export default function LibraryCard({ post }: { post: Post }) {
     month: 'short',
     year: 'numeric'
   });
+
+  const getThumbnailSrc = () => {
+    if (post.mediaType === 'video') {
+      if (post.thumbnailUrl) return post.thumbnailUrl;
+
+      if (post.mediaUrl?.includes('cloudinary.com')) {
+        return post.mediaUrl
+          .replace('/video/upload/', '/video/upload/so_0/')
+          .replace(/\.[^/.]+$/, '.jpg');
+      }
+    }
+
+    return post.thumbnailUrl || post.mediaUrl;
+  };
 
   return (
     <div className="bg-[#fcfaf7] border-[0.5px] border-[#e4ded2] flex flex-col gap-[12px] p-[12px] rounded-[12px] shadow-[0px_4px_4px_0px_rgba(228,222,210,0.25)] w-full hover:shadow-md transition-shadow">
@@ -62,7 +78,7 @@ export default function LibraryCard({ post }: { post: Post }) {
       {/* Image with Link */}
       <Link href={`/user/posts/${post._id}`} className="block w-full">
         <div className="flex flex-col h-[200px] justify-end p-[12px] relative rounded-[12px] overflow-hidden w-full cursor-pointer group">
-          <Image src={post.mediaUrl} alt={post.title} fill className="object-cover transition-transform group-hover:scale-105" />
+          <Image src={getThumbnailSrc()} alt={post.title} fill className="object-cover transition-transform group-hover:scale-105" />
           {post.isExclusive && (
             <div className="bg-[rgba(26,26,26,0.5)] flex items-center justify-center px-[8px] py-[4px] gap-[4px] relative rounded-[32px] shrink-0 self-start z-10 backdrop-blur-sm">
               <Lock className="size-[12px] text-white" strokeWidth={3} />

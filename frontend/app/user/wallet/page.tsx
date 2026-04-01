@@ -22,7 +22,7 @@ export default function WalletPage() {
     if (!transactions?.length) return [];
 
     return (transactions as WalletTransaction[]).map((tx, idx: number) => {
-      const createdAt = tx?.createdAt ? new Date(tx.createdAt) : new Date();
+      const createdAt = tx?.createdAt ? new Date(tx.createdAt) : new Date(0);
       const type = tx?.type === 'credit' ? 'credit' : 'purchase';
       const referenceId = tx?.referenceId ? ` #${tx.referenceId}` : '';
 
@@ -33,11 +33,13 @@ export default function WalletPage() {
             ? `Credits added to wallet${referenceId}`
             : `Unlocked premium content${referenceId}`,
         date: createdAt.toLocaleDateString('en-GB', {
+          timeZone: 'UTC',
           day: '2-digit',
           month: 'short',
           year: 'numeric'
         }),
         time: createdAt.toLocaleTimeString('en-US', {
+          timeZone: 'UTC',
           hour: 'numeric',
           minute: '2-digit'
         }).toLowerCase(),
