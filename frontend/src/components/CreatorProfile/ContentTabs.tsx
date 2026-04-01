@@ -2,29 +2,16 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
-
-interface ContentCounts {
-  posts?: number;
-  videos?: number;
-  livestreams?: number;
-  reviews?: number;
-}
+import { useParams, useSearchParams } from 'next/navigation';
 
 export default function ContentTabs({
   defaultTab = 'posts',
   creatorId: propCreatorId,
-  contentCounts,
-  onTabChange
-}: { 
-  defaultTab?: string, 
-  creatorId?: string,
-  contentCounts?: ContentCounts,
-  onTabChange?: (tabId: string) => void
+}: {
+  defaultTab?: string;
+  creatorId?: string;
 }) {
   const params = useParams();
-  const router = useRouter();
   const creatorId = propCreatorId || params?.id || 'default';
   
   const searchParams = useSearchParams();
@@ -34,31 +21,10 @@ export default function ContentTabs({
   const TABS = [
     { id: 'posts', label: 'Posts', icon: '/assets/creator/gallery.svg', href: `/user/creators/${creatorId}` },
     { id: 'videos', label: 'Videos', icon: '/assets/creator/video-circle.svg', href: `/user/creators/${creatorId}?tab=videos` },
-    { id: 'livestreams', label: 'Livestreams', icon: '/assets/creator/video.svg', href: `/livestream/${creatorId}` },
+    { id: 'livestreams', label: 'Livestreams', icon: '/assets/creator/video.svg', href: `/user/creators/${creatorId}?tab=livestreams` },
     { id: 'reviews', label: 'Reviews', icon: '/assets/creator/message.svg', href: `/user/creators/${creatorId}/reviews` },
     { id: 'about', label: 'About', icon: '/assets/creator/info-circle.svg', href: `/user/creators/${creatorId}/about` },
   ];
-
-  const handleTabClick = (e: React.MouseEvent, tab: any) => {
-    // If we have counts and the count for this tab is 0, show popup
-    if (contentCounts) {
-      const count = contentCounts[tab.id as keyof ContentCounts];
-      
-      // We don't check "about" as it's always accessible
-      if (tab.id !== 'about' && count === 0) {
-        e.preventDefault();
-        toast.error(`Oops! The creator hasn't uploaded the ${tab.label.toLowerCase()} yet.`, {
-          icon: '🔍',
-          style: {
-            borderRadius: '10px',
-            background: '#333',
-            color: '#fff',
-          },
-        });
-        return;
-      }
-    }
-  };
 
   return (
     <div className="flex gap-[12px] items-center border-b border-[#e4ded2] w-full shrink-0">
@@ -69,13 +35,11 @@ export default function ContentTabs({
           <Link
             key={tab.id}
             href={tab.href}
-            scroll={false}
-            key={tab.id}
-            onClick={(e) => handleTabClick(e, tab)}
+            replace={true}
             className={`flex gap-[8px] items-center justify-center p-[12px] cursor-pointer transition-colors relative 
               ${isActive ? 'border-b-2 border-[#f95c4b]' : 'border-b-2 border-transparent hover:bg-black/5'}
             `}
-            style={{ marginBottom: '-1px' }} 
+            style={{ marginBottom: '-1px' }}
           >
             <Image
               src={tab.icon}
@@ -97,4 +61,3 @@ export default function ContentTabs({
     </div>
   );
 }
-
