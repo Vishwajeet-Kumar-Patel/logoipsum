@@ -51,6 +51,56 @@ const getIdValue = (value: any): string => {
   return value.toString();
 };
 
+const sanitizeMessageHtml = (html: string): string => {
+  if (typeof window === 'undefined') {
+    return html;
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'BR', 'P']);
+
+  const sanitizeNode = (node: Node): Node | null => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return document.createTextNode(node.textContent || '');
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return null;
+    }
+
+    const element = node as Element;
+    const fragment = document.createDocumentFragment();
+
+    element.childNodes.forEach((child) => {
+      const cleanChild = sanitizeNode(child);
+      if (cleanChild) {
+        fragment.appendChild(cleanChild);
+      }
+    });
+
+    if (!allowedTags.has(element.tagName)) {
+      return fragment;
+    }
+
+    const cleanElement = document.createElement(element.tagName.toLowerCase());
+    cleanElement.appendChild(fragment);
+    return cleanElement;
+  };
+
+  const cleanRoot = document.createDocumentFragment();
+  doc.body.childNodes.forEach((child) => {
+    const cleanChild = sanitizeNode(child);
+    if (cleanChild) {
+      cleanRoot.appendChild(cleanChild);
+    }
+  });
+
+  const container = document.createElement('div');
+  container.appendChild(cleanRoot);
+  return container.innerHTML;
+};
+
 export default function MessageBubble({
   message,
   onDelete,
@@ -70,6 +120,12 @@ export default function MessageBubble({
   const actionButtonRef = useRef<HTMLButtonElement>(null);
   const messageId = message._id || message.id || '';
   const senderId = getIdValue(message.sender);
+  const rawMessageText = message.text || '';
+  const isRichText = /<\/?[a-z][\s\S]*>/i.test(rawMessageText);
+  const safeMessageHtml = useMemo(
+    () => sanitizeMessageHtml(rawMessageText),
+    [rawMessageText]
+  );
 
   const reactionCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -330,7 +386,14 @@ export default function MessageBubble({
 
               {/* Message text below media (only if text exists) */}
               {message.text && (
-                <p className="font-[family-name:var(--font-figtree)] text-[15px] text-[#1a1a1a] leading-relaxed whitespace-pre-wrap">{message.text}</p>
+                isRichText ? (
+                  <div
+                    className="font-[family-name:var(--font-figtree)] text-[15px] text-[#1a1a1a] leading-relaxed whitespace-pre-wrap [&_p]:m-0"
+                    dangerouslySetInnerHTML={{ __html: safeMessageHtml }}
+                  />
+                ) : (
+                  <p className="font-[family-name:var(--font-figtree)] text-[15px] text-[#1a1a1a] leading-relaxed whitespace-pre-wrap">{message.text}</p>
+                )
               )}
               {message.isEdited && (
                 <p className="font-[family-name:var(--font-figtree)] text-[11px] text-[#aaa] italic mt-1 text-right">edited</p>
