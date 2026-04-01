@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2, MessageCircle, Pencil, Send, ThumbsDown, ThumbsUp, Trash2, X } from 'lucide-react';
@@ -109,6 +110,9 @@ export default function ProfileContentFeed({ creatorId }: ProfileContentFeedProp
   const token = useAuthStore((state) => state.token);
   const isMounted = useIsMounted();
 
+  const searchParams = useSearchParams();
+  const currentTab = searchParams?.get('tab') || 'posts';
+
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [reactingKey, setReactingKey] = useState<string | null>(null);
@@ -165,6 +169,14 @@ export default function ProfileContentFeed({ creatorId }: ProfileContentFeedProp
 
     return grouped;
   }, [comments]);
+
+  const filteredPosts = useMemo(() => {
+    return posts.filter(post => {
+      if (currentTab === 'videos') return post.mediaType === 'video';
+      if (currentTab === 'livestreams') return post.mediaType === 'livestream';
+      return true;
+    });
+  }, [posts, currentTab]);
 
   const updatePostCounters = (postId: string, data: Partial<Pick<FeedPost, 'likes' | 'dislikes' | 'comments' | 'userReaction'>>) => {
     setPosts((prevPosts) =>
@@ -441,7 +453,7 @@ export default function ProfileContentFeed({ creatorId }: ProfileContentFeedProp
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[16px] w-full max-w-full">
-        {posts.map((post) => {
+        {filteredPosts.map((post) => {
           const liked = post.userReaction === 'like';
           const disliked = post.userReaction === 'dislike';
           const likeLoading = reactingKey === `${post._id}-like`;
@@ -528,7 +540,15 @@ export default function ProfileContentFeed({ creatorId }: ProfileContentFeedProp
             </div>
           );
         })}
-        {posts.length === 0 && <div className="col-span-full p-20 text-center italic text-zinc-500">No posts shared yet.</div>}
+        {filteredPosts.length === 0 && (
+          <div className="col-span-full p-20 text-center italic text-zinc-500">
+            {currentTab === 'videos' 
+              ? 'No videos shared yet.' 
+              : currentTab === 'livestreams' 
+                ? 'No livestreams yet.' 
+                : 'No posts shared yet.'}
+          </div>
+        )}
       </div>
 
       {activePost && (

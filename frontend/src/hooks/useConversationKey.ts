@@ -22,8 +22,8 @@ export function useConversationKey(conversationId: string | null) {
         keyCache[conversationId] = res.data.key;
         setKey(res.data.key);
       })
-      .catch((error) => {
-        console.error(error);
+      .catch(() => {
+        // Keep chat usable even when the encryption key endpoint is unavailable.
         setKey(null);
       });
   }, [conversationId]);

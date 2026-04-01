@@ -24,10 +24,12 @@ const getAvatarUrl = (profile: any) => profile?.avatar || DEFAULT_AVATAR;
 const getLastMessagePreview = (message: any) => {
   if (!message) return 'No messages yet';
   if (message.isDeleted) return 'This message was deleted';
-  if (message.text) return message.text;
+  if (message.text) return stripHtmlToPlainText(message.text);
   if (message.isEncrypted) return 'Encrypted message';
   return 'Media message';
 };
+
+const stripHtmlToPlainText = (value: string) => value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
 const getParticipantId = (participant: any): string => {
   if (!participant) return '';
@@ -79,8 +81,8 @@ export default function MessagesPage() {
 
     try {
       await api.put(`/creator/messages/seen/${conversationId}`);
-    } catch (error) {
-      console.error(error);
+    } catch {
+      // Avoid noisy console errors for transient seen-state failures.
     }
   };
 
@@ -189,9 +191,13 @@ export default function MessagesPage() {
     retryMedia?: { mediaUrl?: string; mediaType?: 'image' | 'video'; thumbnailUrl?: string } | null
   ) => {
     const editorText = editorRef.current?.innerText.trim() || '';
+    const editorHtml = editorRef.current?.innerHTML || '';
     const actualRetryText = typeof retryText === 'string' ? retryText : undefined;
-    const text = (actualRetryText ?? editorText).trim();
-    if ((!text && !mediaPreview && !retryMedia?.mediaUrl) || !selectedChatId || isBlocked) return;
+    const text = (actualRetryText ?? editorHtml).trim();
+    const hasTextContent = actualRetryText !== undefined
+      ? Boolean(actualRetryText.trim())
+      : Boolean(editorText);
+    if ((!hasTextContent && !mediaPreview && !retryMedia?.mediaUrl) || !selectedChatId || isBlocked) return;
     const activeReply = retryReplyTo ?? replyingTo;
     
     const currentChat = conversations.find((c: any) => c.id === selectedChatId);
@@ -502,7 +508,7 @@ export default function MessagesPage() {
       return;
     }
 
-    const resolvedDisplayText = (message?.text || '').trim();
+    const resolvedDisplayText = stripHtmlToPlainText(message?.text || '');
     const senderName = message?.sender?.name
       || (message?.isSender ? (currentUser?.name || 'You') : (activeConversation?.participant?.name || 'Unknown'));
 

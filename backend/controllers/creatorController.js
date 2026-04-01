@@ -9,6 +9,7 @@ const Notification = require('../models/Notification');
 const Livestream = require('../models/Livestream');
 const Message = require('../models/Message');
 const Block = require('../models/Block');
+const Review = require('../models/Review');
 
 // --- Dashboard ---
 const getDashboardData = async (req, res) => {
@@ -52,13 +53,23 @@ const getDashboardData = async (req, res) => {
       { name: 'Total', subscription: posts.reduce((sum, p) => sum + (p.revenue?.breakdown?.subscriptionPay || 0), 0), exclusive: posts.reduce((sum, p) => sum + (p.revenue?.breakdown?.directPurchase || 0), 0) },
     ];
 
+    // Compute dynamic rating
+    const ratingAgg = await Review.aggregate([
+      { $match: { creator: creator._id } },
+      { $group: { _id: null, avg: { $avg: '$rating' } } }
+    ]);
+    const averageRating = ratingAgg.length > 0
+      ? Math.round(ratingAgg[0].avg * 10) / 10
+      : null;
+
     res.json({
       creator,
       stats: {
         totalEarned,
         thisMonth,
         activeSubscribers,
-        postCount: posts.length
+        postCount: posts.length,
+        averageRating
       },
       postRevenueBreakdown,
       revenueHistory
@@ -605,29 +616,39 @@ const createLivestream = async (req, res) => {
             if (!creator) return res.status(404).json({ error: 'Creator profile missing' });
 
             const { title, description, audience, scheduledTime, settings, status } = req.body;
-            let thumbnail = '';
+      const thumbnailFile = req.files?.file?.[0] || req.files?.thumbnail?.[0];
 
-            if (req.file) {
-                const streamUpload = (req) => {
+      if (!thumbnailFile) {
+        return res.status(400).json({ error: 'Livestream thumbnail is required' });
+      }
+
+      if (!thumbnailFile.mimetype || !thumbnailFile.mimetype.startsWith('image/')) {
+        return res.status(400).json({ error: 'Thumbnail must be an image file' });
+      }
+
+      let thumbnail = '';
+
+      if (thumbnailFile) {
+        const streamUpload = (file) => {
                     return new Promise((resolve, reject) => {
                         let stream = cloudinary.uploader.upload_stream(
-                            { resource_type: 'auto', folder: 'logoipsum_livestreams' },
+              { resource_type: 'image', folder: 'logoipsum_livestreams' },
                             (error, result) => {
                                 if (result) resolve(result);
                                 else reject(error);
                             }
                         );
-                        streamifier.createReadStream(req.file.buffer).pipe(stream);
+            streamifier.createReadStream(file.buffer).pipe(stream);
                     });
                 };
-                const result = await streamUpload(req);
+        const result = await streamUpload(thumbnailFile);
                 thumbnail = result.secure_url;
             }
 
             const newLive = await Livestream.create({
                 title,
                 description,
-                thumbnail: thumbnail || 'https://via.placeholder.com/600x400',
+        thumbnail,
                 audience,
                 scheduledTime,
                 status: status || 'scheduled',
