@@ -53,9 +53,26 @@ export default function CreateLivestreamPage() {
     }
   }, [cameraStream]);
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selected = e.target.files[0];
+      if (!selected.type.startsWith('image/')) {
+        toast.error('Thumbnail must be an image file');
+        return;
+      }
+
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+
       setFile(selected);
       setPreviewUrl(URL.createObjectURL(selected));
     }
@@ -63,6 +80,7 @@ export default function CreateLivestreamPage() {
 
   const handleStartLive = async () => {
     if (!title) return toast.error("Title is required");
+    if (!file) return toast.error("Thumbnail image is required");
     
     setPublishing(true);
     try {
@@ -72,7 +90,7 @@ export default function CreateLivestreamPage() {
       formData.append('audience', audience);
       formData.append('status', activeTab === 'Go live now' ? 'live' : 'scheduled');
       formData.append('scheduledTime', activeTab === 'Go live now' ? new Date().toISOString() : new Date(Date.now() + 86400000).toISOString());
-      if (file) formData.append('file', file);
+      formData.append('file', file);
 
       const res = await api.post('/creator/livestreams', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -260,6 +278,9 @@ export default function CreateLivestreamPage() {
                >
                   {file ? 'Change Thumbnail' : 'Upload'}
                </button>
+               {!file && (
+                 <p className="mt-2 text-[11px] font-semibold text-[#ef4444]">Thumbnail is required to start or schedule a livestream.</p>
+               )}
             </div>
 
             {/* Live Settings */}
