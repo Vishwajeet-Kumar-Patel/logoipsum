@@ -49,6 +49,9 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
           <Link href="/admin/moderation" className={isActive('/admin/moderation')}>
             <Shield className="w-4 h-4" /> Moderation
           </Link>
+          <Link href="/admin/sample-moderation" className={isActive('/admin/sample-moderation')}>
+            <BarChart3 className="w-4 h-4" /> Sample Moderation
+          </Link>
           <Link href="/admin/revenue" className={isActive('/admin/revenue')}>
             <DollarSign className="w-4 h-4" /> Revenue
           </Link>

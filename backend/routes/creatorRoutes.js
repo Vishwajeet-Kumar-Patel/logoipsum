@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { checkBan } = require('../../frontend/Moderation/middleware/checkBan.middleware');
 const {
   getDashboardData,
   createPost,
@@ -33,6 +34,7 @@ const {
 } = require('../controllers/creatorController');
 
 router.use(protect);
+router.use(checkBan);
 router.use(authorize('creator'));
 
 router.get('/dashboard', getDashboardData);

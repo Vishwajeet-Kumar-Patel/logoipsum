@@ -14,7 +14,12 @@ const cloudinary = require('../utils/cloudinary');
 
 const profileUpload = multer({ storage: multer.memoryStorage() }).single('avatar');
 
-const getPostAccessInfo = ({ post, memberships = [], userId = null }) => {
+const getPostAccessInfo = ({ post, memberships = [], userId = null, isAdmin = false }) => {
+  if (isAdmin) {
+    const tier = post.accessTier || (post.isExclusive ? 'members_only' : 'everyone');
+    return { hasAccess: true, accessTier: tier, requiresPurchase: false, hasPurchased: true };
+  }
+
   const tier = post.accessTier || (post.isExclusive ? 'members_only' : 'everyone');
   const creatorIdValue = (post.creatorId && post.creatorId._id)
     ? post.creatorId._id.toString()
@@ -232,12 +237,14 @@ exports.getCreatorPosts = async (req, res) => {
     
     let userId = null;
     let memberships = [];
+    let isAdmin = false;
 
     // Check if user is authenticated
     if (req.user) {
       userId = req.user._id;
       const user = await User.findById(userId);
       memberships = user?.memberships || [];
+      isAdmin = user?.role === 'admin';
     } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       try {
         const token = req.headers.authorization.split(' ')[1];
@@ -245,13 +252,14 @@ exports.getCreatorPosts = async (req, res) => {
         userId = decoded.id;
         const user = await User.findById(userId);
         memberships = user?.memberships || [];
+        isAdmin = user?.role === 'admin';
       } catch (e) {
         // Token invalid, ignore
       }
     }
 
     const filteredPosts = posts.map(post => {
-      const accessInfo = getPostAccessInfo({ post, memberships, userId });
+      const accessInfo = getPostAccessInfo({ post, memberships, userId, isAdmin });
       return {
         ...post.toObject(),
         hasAccess: accessInfo.hasAccess,
@@ -344,7 +352,7 @@ exports.getPostDetails = async (req, res) => {
     }
 
     let isFavorited = false;
-    let accessInfo = getPostAccessInfo({ post, memberships: [], userId: null });
+    let accessInfo = getPostAccessInfo({ post, memberships: [], userId: null, isAdmin: false });
     
     if (userId) {
       // Increment views and track unique viewers
@@ -363,7 +371,12 @@ exports.getPostDetails = async (req, res) => {
         if (user.favorites && user.favorites.some(favId => favId && favId.toString() === post._id.toString())) {
           isFavorited = true;
         }
-        accessInfo = getPostAccessInfo({ post, memberships: user.memberships || [], userId });
+        accessInfo = getPostAccessInfo({
+          post,
+          memberships: user.memberships || [],
+          userId,
+          isAdmin: user.role === 'admin',
+        });
       }
     } else {
       // For guests

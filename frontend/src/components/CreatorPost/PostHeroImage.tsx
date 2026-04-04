@@ -1,5 +1,7 @@
 import Image from 'next/image';
 import { Lock } from 'lucide-react';
+import { useState } from 'react';
+import { ReportModal } from '@/Moderation/components/ReportModal';
 
 interface PostHeroImageProps {
   mediaUrl?: string;
@@ -10,6 +12,9 @@ interface PostHeroImageProps {
   price?: number;
   hasAccess?: boolean;
   onUnlockClick?: () => void;
+  targetId?: string;
+  targetType?: 'post' | 'user' | 'dm';
+  showReportButton?: boolean;
 }
 
 export default function PostHeroImage({ 
@@ -20,8 +25,12 @@ export default function PostHeroImage({
   accessTier = 'members_only',
   price = 0,
   hasAccess = true,
-  onUnlockClick
+  onUnlockClick,
+  targetId,
+  targetType = 'post',
+  showReportButton = false,
 }: PostHeroImageProps) {
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const isLocked = isExclusive && !hasAccess;
 
   const renderMedia = () => {
@@ -49,6 +58,19 @@ export default function PostHeroImage({
   return (
     <div className="h-[340px] relative rounded-[16px] w-full max-w-[1119px] shrink-0 mt-[20px] overflow-hidden group bg-black flex items-center justify-center">
       {renderMedia()}
+
+      {showReportButton && targetId ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsReportOpen(true);
+          }}
+          className="absolute top-4 right-4 z-20 rounded-full bg-black/55 text-white text-xs px-3 py-1.5 hover:bg-black/70"
+        >
+          Report
+        </button>
+      ) : null}
       
       {/* Dark overlay for contrast */}
       <div className={`absolute inset-0 bg-black/20 rounded-[16px] transition-opacity ${isLocked ? 'opacity-100' : 'opacity-100 group-hover:opacity-40'}`} />
@@ -78,6 +100,10 @@ export default function PostHeroImage({
           </button>
         </div>
       )}
+
+      {isReportOpen && targetId ? (
+        <ReportModal targetId={targetId} targetType={targetType} onClose={() => setIsReportOpen(false)} />
+      ) : null}
     </div>
   );
 }

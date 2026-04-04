@@ -25,8 +25,26 @@ function SignUpForm() {
     e.preventDefault();
     setLoading(true);
     try {
+      let deviceFingerprint = '';
+      try {
+        const FingerprintJS = (await import('@fingerprintjs/fingerprintjs')).default;
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        deviceFingerprint = result.visitorId;
+      } catch {
+        deviceFingerprint = '';
+      }
+
       // Pass the role from searchParams if needed, or handle it in role selection later
-      const res = await api.post('/auth/register', { name, username, phone, email, password, role });
+      const res = await api.post('/auth/register', {
+        name,
+        username,
+        phone,
+        email,
+        password,
+        role,
+        deviceFingerprint,
+      });
       if (res.data.success) {
         toast.success("Account created! Check your email for OTP.");
         // Redirect to verify-email page with the email

@@ -3,9 +3,9 @@ export interface ReportedItem {
   itemId: string;
   title: string;
   creator: string;
-  reason: 'COPYRIGHT' | 'SPAM' | 'NUDITY' | 'HATE_SPEECH';
+  reason: string;
   reports: number;
-  status: 'Pending' | 'Under Review' | 'Approved';
+  status: string;
   thumbnailUrl?: string; // We'll just generate gradient backgrounds based on title
 }
 

@@ -4,6 +4,7 @@ const generateToken = require('../utils/generateToken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
+const { checkFlagged } = require('../../frontend/Moderation/services/flaggedIdentity.service');
 
 // @desc    Register new user
 // @route   POST /api/auth/register
@@ -38,9 +39,22 @@ const sendOtpEmail = async (email, otp) => {
 };
 
 const registerUser = async (req, res) => {
-  const { name, email, password, role, username, phone } = req.body;
+  const { name, email, password, role, username, phone, deviceFingerprint } = req.body;
 
   try {
+    const flagged = await checkFlagged({
+      email,
+      phone,
+      username,
+      deviceFingerprint,
+    });
+
+    if (flagged) {
+      return res.status(403).json({
+        message: 'Account creation is not available.',
+      });
+    }
+
     const userExists = await User.findOne({ email });
 
     if (userExists) {

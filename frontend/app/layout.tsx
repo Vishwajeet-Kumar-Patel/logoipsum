@@ -3,6 +3,7 @@ import { Figtree, Lexend, Comfortaa } from "next/font/google";
 import "./globals.css";
 import Footer from "../src/components/Footer";
 import { Toaster } from 'react-hot-toast';
+import { ModerationProvider } from '@/Moderation/components/ModerationProvider';
 
 const figtree = Figtree({
   variable: "--font-figtree",
@@ -46,6 +47,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-[var(--font-figtree)] bg-white">
         <Toaster position="bottom-right" />
+        <ModerationProvider />
         <div className="flex-1 shrink-0">{children}</div>
         <Footer />
       </body>

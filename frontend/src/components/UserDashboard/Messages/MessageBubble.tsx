@@ -40,6 +40,7 @@ interface MessageBubbleProps {
   onReply?: (message: ChatMessage) => void;
   onScrollToMessage?: (messageId: string) => void;
   onOpenLightbox?: (slides: any[], index: number) => void;
+  onReport?: (message: ChatMessage) => void;
 }
 
 const EMOJI_OPTIONS = ['❤️', '👍', '😂', '😮', '😢', '😡'];
@@ -111,7 +112,8 @@ export default function MessageBubble({
   onRetry,
   onReply,
   onScrollToMessage,
-  onOpenLightbox
+  onOpenLightbox,
+  onReport
 }: MessageBubbleProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
@@ -171,7 +173,7 @@ export default function MessageBubble({
     ? 'bg-[rgba(249,92,75,0.08)] border border-[#f95c4b]/20 text-[#1a1a1a] rounded-tr-[4px]'
     : 'bg-white border border-[#e4ded2] text-[#1a1a1a] rounded-tl-[4px]';
 
-  const triggerAction = (action: 'reply' | 'react' | 'edit' | 'delete_for_me' | 'delete_for_everyone' | 'block') => {
+  const triggerAction = (action: 'reply' | 'react' | 'edit' | 'delete_for_me' | 'delete_for_everyone' | 'block' | 'report') => {
     setShowMenu(false);
 
     if (action === 'reply') {
@@ -201,6 +203,11 @@ export default function MessageBubble({
 
     if (action === 'block') {
       onBlock(senderId);
+      return;
+    }
+
+    if (action === 'report') {
+      onReport?.(message);
     }
   };
 
@@ -210,7 +217,7 @@ export default function MessageBubble({
       const scrollContainer = actionButtonRef.current?.closest('[data-messages-scroll-container]');
       
       // Calculate height based on number of options. Sender has 5 options (~180px), receiver has 3 (~110px). Add safe buffer.
-      const estimatedMenuHeight = message.isSender ? 200 : 130;
+      const estimatedMenuHeight = message.isSender ? 200 : 170;
 
       if (buttonRect) {
         if (scrollContainer instanceof HTMLElement) {
@@ -472,6 +479,13 @@ export default function MessageBubble({
                 className="w-full px-3 py-2 text-[13px] text-left font-[family-name:var(--font-figtree)] text-[#5a5a5a] hover:bg-[#f6f4f1] border-t border-[#e4ded2]"
               >
                 Delete for me
+              </button>
+              <button
+                type="button"
+                onClick={() => triggerAction('report')}
+                className="w-full px-3 py-2 text-[13px] text-left font-[family-name:var(--font-figtree)] text-[#f95c4b] hover:bg-[#fff3f2] border-t border-[#e4ded2]"
+              >
+                Report message
               </button>
             </div>
           )}

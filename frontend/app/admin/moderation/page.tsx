@@ -3,14 +3,87 @@
 import React, { useState, useEffect } from 'react';
 import { ContentPreviewCard } from '@/src/components/admin/moderation/ContentPreviewCard';
 import { ModerationTable } from '@/src/components/admin/moderation/ModerationTable';
-import { previewData, reportedItemsData } from '@/src/data/moderationData';
+import api from '@/src/lib/api';
+import { previewData, reportedItemsData, type ReportedItem } from '@/src/data/moderationData';
 
 export default function ModerationPage() {
   const [mounted, setMounted] = useState(false);
+  const [items, setItems] = useState<ReportedItem[]>(reportedItemsData);
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const loadReports = async () => {
+      try {
+        const res = await api.get('/moderation/admin/reports', {
+          params: { status: 'pending', page: 1, limit: 50 },
+        });
+
+        const list = Array.isArray(res.data?.items) ? res.data.items : [];
+        if (!list.length) {
+          const fallback = await api.get('/moderation/sample/reports', {
+            params: { status: 'pending', page: 1, limit: 50 },
+          });
+          const fallbackList = Array.isArray(fallback.data?.items) ? fallback.data.items : [];
+          if (!fallbackList.length) {
+            setItems([]);
+            return;
+          }
+
+          const mappedFallback: ReportedItem[] = fallbackList.map((row: any) => {
+            const rawStatus = String(row?.status || 'pending').toLowerCase();
+            const status =
+              rawStatus === 'pending'
+                ? 'Pending'
+                : rawStatus === 'under_review'
+                  ? 'Under Review'
+                  : 'Approved';
+
+            return {
+              id: String(row?._id || ''),
+              itemId: String(row?.targetId || '').slice(-6).toUpperCase(),
+              title: `${String(row?.targetType || 'content').toUpperCase()} Report`,
+              creator: 'Reported User',
+              reason: String(row?.reason || 'other').toUpperCase(),
+              reports: Number(row?.additionalReportersCount || 0) + 1,
+              status,
+            };
+          });
+
+          setItems(mappedFallback);
+          return;
+        }
+
+        const mapped: ReportedItem[] = list.map((row: any) => {
+          const rawStatus = String(row?.status || 'pending').toLowerCase();
+          const status =
+            rawStatus === 'pending'
+              ? 'Pending'
+              : rawStatus === 'under_review'
+                ? 'Under Review'
+                : 'Approved';
+
+          return {
+            id: String(row?._id || ''),
+            itemId: String(row?.targetId || '').slice(-6).toUpperCase(),
+            title: `${String(row?.targetType || 'content').toUpperCase()} Report`,
+            creator: 'Reported User',
+            reason: String(row?.reason || 'other').toUpperCase(),
+            reports: Number(row?.additionalReportersCount || 0) + 1,
+            status,
+          };
+        });
+
+        setItems(mapped);
+      } catch {
+        setItems(reportedItemsData);
+      }
+    };
+
+    loadReports();
   }, []);
 
   return (
@@ -47,7 +120,7 @@ export default function ModerationPage() {
 
           {/* Table */}
           <div className={mounted ? 'visible' : ''}>
-            <ModerationTable items={reportedItemsData} delay={150} />
+            <ModerationTable items={items} delay={150} />
           </div>
         </div>
       </div>

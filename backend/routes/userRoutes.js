@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { checkBan } = require('../../frontend/Moderation/middleware/checkBan.middleware');
 const {
   getCreators,
   getCreatorProfile,
@@ -54,6 +55,7 @@ router.get('/reviews/:id/replies', getReviewReplies);
 
 // Protected routes (for Fans/Users)
 router.use(protect);
+router.use(checkBan);
 router.put('/update-profile', updateUserProfile);
 router.get('/notifications', getUserNotifications);
 router.put('/notifications/mark-all-read', markAllUserNotificationsRead);
