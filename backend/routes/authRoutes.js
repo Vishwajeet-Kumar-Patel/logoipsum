@@ -11,6 +11,7 @@ const {
 	verifyOtp,
 	setRole,
 	getSecurityConfig,
+	getLegalDocuments,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const { getCaptchaConfig, requireCaptchaIfEnabled } = require('../middleware/captchaMiddleware');
@@ -18,6 +19,7 @@ const { checkBan } = require('../../frontend/Moderation/middleware/checkBan.midd
 
 router.get('/captcha/config', getCaptchaConfig);
 router.get('/security-config', getSecurityConfig);
+router.get('/legal-documents', getLegalDocuments);
 router.post('/register', requireCaptchaIfEnabled('creating an account'), registerUser);
 router.post('/login', requireCaptchaIfEnabled('logging in'), loginUser);
 router.post('/forgot-password', requireCaptchaIfEnabled('requesting a password reset'), forgotPassword);

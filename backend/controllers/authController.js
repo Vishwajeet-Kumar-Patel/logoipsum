@@ -1,12 +1,18 @@
 const User = require('../models/User');
 const Creator = require('../models/Creator');
 const Admin = require('../../frontend/AdminManagement/models/AdminModel');
+const { AppSetting } = require('../models/AdminData');
 const generateToken = require('../utils/generateToken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const { getRuntimeSecuritySettings } = require('../utils/securitySettings');
 const { checkFlagged } = require('../../frontend/Moderation/services/flaggedIdentity.service');
+
+const DEFAULT_TERMS_OF_SERVICE =
+  '## Platform Usage Rules\n1. Users must be 18+...\n2. All content must comply with global standards...';
+const DEFAULT_PRIVACY_POLICY =
+  '## Data Privacy\nWe value your data security. This document outlines how we process information...';
 
 // @desc    Register new user
 // @route   POST /api/auth/register
@@ -497,6 +503,35 @@ const getSecurityConfig = async (req, res) => {
   }
 };
 
+// @desc    Get legal documents configured by admin
+// @route   GET /api/auth/legal-documents
+// @access  Public
+const getLegalDocuments = async (req, res) => {
+  try {
+    const settings = await AppSetting.findOne()
+      .select('termsOfService privacyPolicy updatedAt')
+      .lean();
+
+    const termsOfService =
+      typeof settings?.termsOfService === 'string' && settings.termsOfService.trim().length > 0
+        ? settings.termsOfService
+        : DEFAULT_TERMS_OF_SERVICE;
+
+    const privacyPolicy =
+      typeof settings?.privacyPolicy === 'string' && settings.privacyPolicy.trim().length > 0
+        ? settings.privacyPolicy
+        : DEFAULT_PRIVACY_POLICY;
+
+    res.json({
+      termsOfService,
+      privacyPolicy,
+      updatedAt: settings?.updatedAt || null,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Set user role (after verification)
 // @route   PATCH /api/auth/set-role
 // @access  Private
@@ -558,4 +593,5 @@ module.exports = {
   verifyOtp,
   setRole,
   getSecurityConfig,
+  getLegalDocuments,
 };

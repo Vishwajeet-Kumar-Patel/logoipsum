@@ -133,8 +133,8 @@ export default function Footer() {
             className="flex gap-6 text-[#5a5a5a] text-[11px] font-bold tracking-[1px] md:tracking-[0.32px]"
             style={{ fontFamily: "'Figtree', sans-serif" }}
           >
-            <a href="#" className="hover:text-black transition-colors">PRIVACY POLICY</a>
-            <a href="#" className="hover:text-black transition-colors">TERM & CONDITION</a>
+            <Link href="/privacy-policy" className="hover:text-black transition-colors">PRIVACY POLICY</Link>
+            <Link href="/terms-and-conditions" className="hover:text-black transition-colors">TERM & CONDITION</Link>
           </div>
         </div>
       </div>
