@@ -23,7 +23,7 @@ const stats = [
 
 export default function WhyCreatorHub() {
   return (
-    <section className="w-full bg-[#f6f4f1] px-8 sm:px-16 py-16 sm:py-[72px] overflow-hidden relative">
+    <section id="features" className="w-full bg-[#f6f4f1] px-8 sm:px-16 py-16 sm:py-[72px] overflow-hidden relative">
       {/* Triangle decoration behind the center image */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] pointer-events-none hidden lg:block">
         <div className="w-full h-full rotate-[22deg]">

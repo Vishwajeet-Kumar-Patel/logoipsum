@@ -1,178 +1,147 @@
 "use client";
 import Link from "next/link";
 
+const statItems = [
+  { value: "500+", label: "Active Creators" },
+  { value: "120K+", label: "Subscriber" },
+  { value: "1M+", label: "Content Views" },
+];
+
+function ArrowUpCircle() {
+  return (
+    <div className="flex size-[56px] rotate-45 items-center justify-center overflow-hidden rounded-full border border-[#f6f4f1]/50 shadow-[0px_0px_250px_0px_#dc3f1a,0px_0px_180px_0px_#dc3f1a,0px_0px_105px_0px_#dc3f1a,0px_0px_52px_0px_#dc3f1a] lg:size-[66px] xl:size-[72px]">
+      <svg
+        width="40"
+        height="40"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle cx="12" cy="12" r="9" stroke="#F6F4F1" strokeWidth="2" />
+        <path
+          d="M10 14L14 10M14 10H10M14 10V14"
+          stroke="#F6F4F1"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
 export default function Hero() {
   return (
     <section
-      className="relative w-full min-h-screen overflow-hidden"
+      className="relative h-[760px] w-full overflow-hidden xl:h-[820px]"
       style={{
         background:
           "linear-gradient(180deg, rgba(58,58,58,0.2) 13.9%, rgba(228,222,210,0.2) 48.5%, rgba(246,244,241,0.2) 86.6%), linear-gradient(90deg, #e14f40 0%, #e14f40 100%)",
       }}
     >
-      {/* Background image with mix-blend-hard-light */}
-      <div className="absolute inset-0 w-full h-full mix-blend-hard-light">
-        <img
-          src="/image-001.png"
-          alt=""
-          className="w-full h-full object-cover pointer-events-none"
-        />
-      </div>
-
-      {/* ── Top-left: Creator Avatars & Tagline ── */}
-      <div className="absolute left-8 sm:left-16 top-20 sm:top-[104px] flex flex-col gap-2 z-20">
-        <div className="flex items-center border-b border-[#e4ded2] pb-2 pr-2">
-          <img
-            src="/image-002.png"
-            alt="Creator 1"
-            className="w-11 h-11 rounded-full border border-[#f6f4f1] object-cover -mr-2"
-          />
-          <img
-            src="/image-003.png"
-            alt="Creator 2"
-            className="w-11 h-11 rounded-full border border-[#f6f4f1] object-cover -mr-2"
-          />
-          <img
-            src="/image-004.png"
-            alt="Creator 3"
-            className="w-11 h-11 rounded-full border border-[#f6f4f1] object-cover"
-          />
+      <div className="relative mx-auto h-full w-full max-w-[1440px]">
+        <div className="pointer-events-none absolute left-1/2 top-[74px] h-[520px] w-[780px] -translate-x-1/2 mix-blend-hard-light lg:h-[620px] lg:w-[980px] xl:top-[77px] xl:h-[743px] xl:w-[1200px]">
+          <img src="/image-001.png" alt="" className="h-full w-full object-cover" />
         </div>
-        <p
-          className="text-white text-base tracking-[0.32px] text-center"
-          style={{ fontFamily: "'Fjalla One', sans-serif" }}
-        >
-          FOR THE NEXT GEN CREATORS
-        </p>
-      </div>
 
-      {/* ── Left Stats ── */}
-      <div className="absolute left-8 sm:left-16 top-[300px] sm:top-[361px] flex flex-col gap-4 z-20 w-[169px] text-white">
-        {/* 500+ */}
-        <div className="flex flex-col items-start pb-2 border-b border-[#faf8f5]">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 flex w-[calc(100%-200px)] max-w-[920px] -translate-x-1/2 -translate-y-1/2 flex-col items-center py-[36px] text-center text-[#f6f4f1] backdrop-blur-[12px]">
           <p
-            className="text-[28px] tracking-[0.56px] leading-[42px]"
+            className="text-[96px] leading-[0.9] tracking-[2.4px] mix-blend-overlay lg:text-[148px] lg:tracking-[3.2px] xl:text-[220px] xl:tracking-[4.4px]"
             style={{ fontFamily: "'Fjalla One', sans-serif" }}
           >
-            500+
+            CREATEOR
           </p>
-          <p className="text-[19px] font-semibold tracking-[0.38px] leading-[29px] font-[var(--font-figtree)]">
-            Active Creators
-          </p>
-        </div>
-        {/* 120K+ */}
-        <div className="flex flex-col items-start pb-2 border-b border-[#faf8f5]">
           <p
-            className="text-[28px] tracking-[0.56px] leading-[42px]"
+            className="text-[96px] leading-[0.9] tracking-[2.4px] lg:text-[148px] lg:tracking-[3.2px] xl:text-[220px] xl:tracking-[4.4px]"
             style={{ fontFamily: "'Fjalla One', sans-serif" }}
           >
-            120K+
-          </p>
-          <p className="text-[19px] font-semibold tracking-[0.38px] leading-[29px] font-[var(--font-figtree)]">
-            Users
+            MONETIZE
           </p>
         </div>
-        {/* 1M+ */}
-        <div className="flex flex-col items-start pb-2">
-          <p
-            className="text-[28px] tracking-[0.56px] leading-[42px]"
-            style={{ fontFamily: "'Fjalla One', sans-serif" }}
-          >
-            1M+
-          </p>
-          <p className="text-[19px] font-semibold tracking-[0.38px] leading-[29px] font-[var(--font-figtree)]">
-            Content Views
-          </p>
-        </div>
-      </div>
 
-      {/* ── Center: Giant Text ── */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 backdrop-blur-[12px] pointer-events-none">
-        <div className="w-[920px] max-w-[90vw] flex flex-col items-center py-9">
-          <div className="w-full flex flex-col items-center justify-center mix-blend-overlay h-[180px] sm:h-[223px]">
-            <p
-              className="text-[clamp(80px,15vw,220px)] text-[#f6f4f1] tracking-[4.4px] leading-none text-center"
-              style={{ fontFamily: "'Fjalla One', sans-serif" }}
-            >
-              CREATOR
-            </p>
+        <div className="absolute left-6 top-[76px] z-30 flex w-[172px] flex-col gap-[8px] lg:left-10 lg:top-[92px] xl:left-[64px] xl:top-[104px] xl:w-[178px]">
+          <div className="flex items-center border-b border-[#e4ded2] pb-[8px] pr-[8px]">
+            <img
+              src="/assets/images/Frame 2147243329.png"
+              alt="Creator 1"
+              className="-mr-[8px] size-[44px] rounded-full border border-[#f6f4f1] object-cover"
+            />
+            <img
+              src="/assets/images/Frame 2147243330.png"
+              alt="Creator 2"
+              className="-mr-[8px] size-[44px] rounded-full border border-[#f6f4f1] object-cover"
+            />
+            <img
+              src="/assets/images/Frame 2147243331.png"
+              alt="Creator 3"
+              className="size-[44px] rounded-full border border-[#f6f4f1] object-cover"
+            />
           </div>
-          <div className="w-full flex flex-col items-center justify-center h-[160px] sm:h-[202px]">
-            <p
-              className="text-[clamp(80px,15vw,220px)] text-[#f6f4f1] tracking-[4.4px] leading-none text-center"
-              style={{ fontFamily: "'Fjalla One', sans-serif" }}
-            >
-              MONETIZE
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Top-right: Arrow icon ── */}
-      <div className="absolute right-8 sm:right-16 top-[130px] sm:top-[155px] z-20">
-        <div
-          className="w-[72px] h-[72px] rounded-full border-2 border-white/50 flex items-center justify-center rotate-45"
-          style={{
-            boxShadow:
-              "0 0 250px #dc3f1a, 0 0 180px #dc3f1a, 0 0 105px #dc3f1a, 0 0 52px #dc3f1a, 0 0 15px #dc3f1a",
-          }}
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#f6f4f1"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <p
+            className="text-center text-[16px] leading-[25.8px] tracking-[0.32px] text-white"
+            style={{ fontFamily: "'Fjalla One', sans-serif" }}
           >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="8 12 12 8 16 12" />
-            <line x1="12" y1="16" x2="12" y2="8" />
-          </svg>
+            FOR THE NEXT GEN CREATORS
+          </p>
         </div>
-      </div>
 
-      {/* ── Bottom-right: Description Text ── */}
-      <div className="absolute right-8 sm:right-16 bottom-[80px] sm:bottom-auto sm:top-[630px] w-[214px] z-20">
-        <p className="text-base text-white font-bold tracking-[0.32px] leading-[26px] font-[var(--font-figtree)]">
-          Join a new wave of creators building income, influence, and impact.
-          Unlock exclusive content, connect with your audience, and turn your
-          passion into profit.
-        </p>
-      </div>
+        <div className="absolute left-6 top-[286px] z-30 flex w-[150px] flex-col gap-[12px] text-white lg:left-10 lg:top-[336px] lg:w-[165px] xl:left-[64px] xl:top-[361px] xl:w-[169px] xl:gap-[16px]">
+          {statItems.map((item, index) => (
+            <div
+              key={item.label}
+              className={`pb-[8px] ${index < statItems.length - 1 ? "border-b border-[#faf8f5]" : ""}`}
+            >
+              <p
+                className="text-[22px] leading-[1.2] tracking-[0.4px] lg:text-[26px] xl:text-[28px] xl:leading-[42.1px] xl:tracking-[0.56px]"
+                style={{ fontFamily: "'Fjalla One', sans-serif" }}
+              >
+                {item.value}
+              </p>
+              <p className="text-[15px] font-semibold leading-[1.2] tracking-[0.26px] lg:text-[17px] xl:text-[19px] xl:leading-[29.2px] xl:tracking-[0.38px]">
+                {item.label}
+              </p>
+            </div>
+          ))}
+        </div>
 
-      {/* ── Center CTA Button ── */}
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-[40px] sm:bottom-auto sm:top-[694px] z-20">
+        <div className="absolute bottom-[102px] right-6 z-30 w-[198px] text-[13px] font-bold leading-[20px] tracking-[0.26px] text-white lg:right-10 lg:bottom-[90px] lg:w-[214px] lg:text-[16px] lg:leading-[25.8px] lg:tracking-[0.32px] xl:bottom-[112px] xl:left-[1162px] xl:right-auto xl:top-[620px]">
+          <p>
+            Join a new wave of creators building income, influence, and impact.
+            Unlock exclusive content, connect with your audience, and turn your
+            passion into profit.
+          </p>
+        </div>
+
         <Link
-          href="/signup"
-          className="flex items-center gap-2 px-6 py-3 rounded-full border border-[#ff9465] text-[#f6f4f1] font-normal text-base cursor-pointer hover:scale-105 transition-transform"
+          href="/marketplace"
+          className="absolute left-1/2 top-[650px] z-30 inline-flex -translate-x-1/2 items-center gap-[8px] rounded-[42px] border border-[#ff9465] px-[16px] py-[12px] text-[16px] text-[#f6f4f1] shadow-[8px_8px_20px_rgba(69,9,0,0.35)] lg:top-[684px] xl:top-[694px]"
           style={{
-            fontFamily: "'Lexend', sans-serif",
+            fontFamily: "var(--font-lexend), 'Lexend', sans-serif",
             backgroundImage:
-              "linear-gradient(147deg, #e14517 57.5%, #d6361f 100%)",
-            boxShadow: "8px 8px 20px rgba(69, 9, 0, 0.35)",
+              "linear-gradient(147deg, rgb(225,69,23) 57.5%, rgb(214,54,31) 100%)",
           }}
         >
           <span>Explore Creators</span>
           <svg
             width="20"
             height="20"
-            viewBox="0 0 20 20"
+            viewBox="0 0 12 12"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M10 2L10 14M10 2L5 7M10 2L15 7"
-              stroke="#f6f4f1"
-              strokeWidth="1.5"
+              d="M3.5 8.5L8.5 3.5M8.5 3.5H5M8.5 3.5V7"
+              stroke="#F6F4F1"
+              strokeWidth="1.4"
               strokeLinecap="round"
               strokeLinejoin="round"
-              transform="rotate(45, 10, 10)"
             />
           </svg>
         </Link>
+
+        <div className="absolute right-8 top-[142px] z-30 lg:right-12 lg:top-[150px] xl:left-[1182px] xl:right-auto xl:top-[155px]">
+          <ArrowUpCircle />
+        </div>
       </div>
     </section>
   );

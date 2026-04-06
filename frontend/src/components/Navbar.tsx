@@ -1,80 +1,97 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+
+const navLinks = [
+  { label: "Home", href: "/", activeOnHome: true },
+  { label: "Marketplace", href: "/marketplace" },
+  { label: "Features", href: "/#features" },
+  { label: "About Us", href: "/about" },
+];
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const navLinks = [
-    { label: "Home", href: "/", active: pathname === "/" },
-    { label: "Marketplace", href: "/marketplace", active: pathname === "/marketplace" },
-    { label: "Blogs", href: "/blogs", active: pathname === "/blogs" },
-    { label: "About Us", href: "/about", active: pathname === "/about" },
-  ];
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
 
   return (
-    <nav className="w-full bg-white px-8 sm:px-16 py-[22px] flex items-center justify-between relative z-50 shadow-[inset_0px_-1px_1px_0px_rgba(0,0,0,0.1)]">
-      {/* Logo */}
-      <div className="shrink-0 h-[34px] w-[134px]">
+    <nav className="relative z-50 flex w-full items-center justify-between border-b border-[#e9e9e9] bg-[rgba(255,254,253,0.4)] px-6 py-2 backdrop-blur-[10px] md:bg-[rgba(255,254,253,0.85)] md:px-16 md:py-[22px]">
+      <Link href="/" aria-label="Go to home" className="block h-[21px] w-[84px] shrink-0 md:h-[34px] md:w-[134px]">
         <img
           src="/assets/icons/logo ipsum logo.svg"
           alt="logoipsum"
-          className="h-full w-full object-contain"
+          className="h-full w-full object-contain object-left"
         />
+      </Link>
+
+      <div className="hidden items-center gap-[25px] md:flex">
+        {navLinks.map((link) => {
+          const isActive = link.activeOnHome
+            ? pathname === "/"
+            : !link.href.includes("#") && pathname === link.href;
+
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`text-sm font-medium tracking-[0.2px] transition-colors hover:text-[#f95c4b] ${
+                isActive ? "text-[#f95c4b] text-base tracking-[0.32px]" : "text-[#424242]"
+              }`}
+              style={{
+                fontFamily: isActive
+                  ? "var(--font-figtree), 'Figtree', sans-serif"
+                  : "var(--font-figtree), 'Figtree', sans-serif",
+              }}
+            >
+              {link.label}
+            </Link>
+          );
+        })}
       </div>
 
-      {/* Nav Links */}
-      <div className="hidden md:flex items-center gap-[25px]">
-        {navLinks.map((link) => (
-          <Link
-            key={link.label}
-            href={link.href}
-            className={`text-sm font-medium tracking-[0.2px] transition-colors hover:text-[#f95c4b] ${
-              link.active ? "text-[#f95c4b] text-base tracking-[0.32px]" : "text-[#424242]"
-            }`}
-            style={{
-              fontFamily: link.active
-                ? "var(--font-figtree), 'Figtree', sans-serif"
-                : "'Inter', sans-serif",
-            }}
-          >
-            {link.label}
-          </Link>
-        ))}
-      </div>
-
-      {/* Right Side: Language + CTA */}
-      <div className="flex items-center gap-5">
-        {/* Language */}
-        <div className="hidden sm:flex items-center gap-[7px]">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#616161"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="2" y1="12" x2="22" y2="12" />
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-          </svg>
+      <div className="flex items-center gap-3 md:gap-5">
+        <button
+          type="button"
+          aria-label="Select language"
+          className="flex items-center gap-1 md:gap-[7px]"
+        >
+          <img
+            src="/assets/icons/Feather Icon.svg"
+            alt=""
+            aria-hidden="true"
+            className="size-4 md:size-6"
+          />
           <span
-            className="text-[#616161] text-base font-bold tracking-[0.2px] uppercase"
-            style={{ fontFamily: "'Inter', sans-serif" }}
+            className="text-[13px] font-medium tracking-[0.26px] text-[#616161] md:text-base md:font-bold md:tracking-[0.2px] md:uppercase"
+            style={{ fontFamily: "var(--font-figtree), 'Figtree', sans-serif", lineHeight: "18.3px" }}
           >
-            EN
+            En
           </span>
-        </div>
+        </button>
 
-        {/* Join as Creator CTA */}
+        <button
+          type="button"
+          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={isMenuOpen}
+          aria-controls="mobile-nav-menu"
+          onClick={() => setIsMenuOpen((prev) => !prev)}
+          className="relative size-[18px] overflow-hidden md:hidden"
+        >
+          <span className="absolute left-[3px] right-[3px] top-[4px] h-[1.4px] rounded-full bg-[#616161]" />
+          <span className="absolute left-[3px] right-[3px] top-[8px] h-[1.4px] rounded-full bg-[#616161]" />
+          <span className="absolute left-[3px] right-[3px] top-[12px] h-[1.4px] rounded-full bg-[#616161]" />
+        </button>
+
         <Link
           href="/signup"
-          className="flex items-center gap-2 px-4 py-3 rounded-[42px] border border-[#ff9465] bg-[#f6f4f1] text-[#1a1a1a] text-base cursor-pointer hover:shadow-lg transition-shadow"
+          className="hidden cursor-pointer items-center gap-2 rounded-[42px] border border-[#ff9465] bg-[#f6f4f1] px-4 py-3 text-base text-[#1a1a1a] transition-shadow hover:shadow-lg md:flex"
           style={{
-            fontFamily: "'Lexend', sans-serif",
+            fontFamily: "var(--font-lexend), 'Lexend', sans-serif",
             boxShadow: "8px 8px 20px rgba(69, 9, 0, 0.16)",
           }}
         >
@@ -95,6 +112,42 @@ export default function Navbar() {
           </svg>
         </Link>
       </div>
+
+      {isMenuOpen && (
+        <div
+          id="mobile-nav-menu"
+          className="absolute right-6 top-[calc(100%+8px)] z-[70] w-[210px] rounded-2xl border border-[#e9e9e9] bg-[rgba(255,254,253,0.96)] p-2 shadow-[0_14px_36px_rgba(20,20,20,0.14)] backdrop-blur-[10px] md:hidden"
+        >
+          {navLinks.map((link) => {
+            const isActive = link.activeOnHome
+              ? pathname === "/"
+              : !link.href.includes("#") && pathname === link.href;
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setIsMenuOpen(false)}
+                className={`block rounded-xl px-3 py-2 text-[13px] tracking-[0.26px] transition-colors ${
+                  isActive ? "bg-[#fff0e6] text-[#f95c4b]" : "text-[#424242] hover:bg-[#fff7f1]"
+                }`}
+                style={{ fontFamily: "var(--font-figtree), 'Figtree', sans-serif", lineHeight: "18.3px" }}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+
+          <Link
+            href="/signup"
+            onClick={() => setIsMenuOpen(false)}
+            className="mt-1 inline-flex w-full items-center justify-center gap-1 rounded-[42px] border border-[#ff9465] bg-[#121212] px-3 py-2 text-[12px] text-[#f2f2f2] shadow-[8px_8px_20px_rgba(69,9,0,0.16)]"
+            style={{ fontFamily: "var(--font-lexend), 'Lexend', sans-serif" }}
+          >
+            <span>Join as Creator</span>
+          </Link>
+        </div>
+      )}
     </nav>
   );
 }
