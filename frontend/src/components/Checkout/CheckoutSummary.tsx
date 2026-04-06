@@ -9,6 +9,13 @@ type CheckoutSummaryProps = {
 
 export default function CheckoutSummary({ creatorName, price, contentName, tax }: CheckoutSummaryProps) {
   const total = price + tax;
+  const formatINR = (amount: number) =>
+    new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
 
   return (
     <div className="flex flex-col gap-[16px] items-start w-[480px]">
@@ -20,7 +27,7 @@ export default function CheckoutSummary({ creatorName, price, contentName, tax }
         </h2>
         <div className="flex items-end">
           <span className="font-['Fjalla_One',sans-serif] font-normal leading-[48.6px] text-[#121212] text-[33px] tracking-[0.66px]">
-            ${price}
+            {formatINR(price)}
           </span>
           <span className="font-['Bricolage_Grotesque',sans-serif] font-light text-[#8a8a8a] text-[32px] leading-[48.6px]">
             /
@@ -41,7 +48,7 @@ export default function CheckoutSummary({ creatorName, price, contentName, tax }
                 {contentName}
               </p>
               <p className="font-['Figtree',sans-serif] font-bold leading-[25.8px] text-[#3a3a3a] text-[16px] tracking-[0.32px]">
-                $ {price}
+                {formatINR(price)}
               </p>
             </div>
             
@@ -50,7 +57,7 @@ export default function CheckoutSummary({ creatorName, price, contentName, tax }
                 Billed monthly
               </p>
               <p className="font-['Figtree',sans-serif] font-medium leading-[18.3px] text-[#9a9a9a] text-[13px] tracking-[0.26px]">
-                $ {price}
+                {formatINR(price)}
               </p>
             </div>
           </div>
@@ -60,7 +67,7 @@ export default function CheckoutSummary({ creatorName, price, contentName, tax }
               Tax
             </p>
             <p className="font-['Figtree',sans-serif] font-bold leading-[25.8px] text-[#272727] text-[16px] tracking-[0.32px]">
-              $ {tax}
+              {formatINR(tax)}
             </p>
           </div>
 
@@ -72,7 +79,7 @@ export default function CheckoutSummary({ creatorName, price, contentName, tax }
             Total
           </p>
           <p className="font-['Figtree',sans-serif] font-bold leading-[29.2px] text-[#1a1a1a] text-[19px] tracking-[0.38px]">
-            $ {total}
+            {formatINR(total)}
           </p>
         </div>
 

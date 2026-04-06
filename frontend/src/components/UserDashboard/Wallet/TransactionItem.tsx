@@ -16,8 +16,12 @@ interface TransactionItemProps {
 }
 
 export default function TransactionItem({ transaction }: TransactionItemProps) {
-  // Format amount based on Figma design `$` followed by space, no decimals.
-  const formattedAmount = `$ ${transaction.amount}`;
+  const formattedAmount = new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(transaction.amount);
 
   return (
     <div className="bg-[#fcfaf7] border-[0.5px] border-[var(--alt-sec,#e4ded2)] flex items-center p-[12px] rounded-[8px] w-full mb-[4px] hover:border-[#d2d8e3] transition-colors">

@@ -7,6 +7,16 @@ import { ArrowLeft, Heart, MessageSquare, Eye, MoreHorizontal, User, Send, Loade
 import api from '@/src/lib/api';
 import toast from 'react-hot-toast';
 
+const formatINR = (value: number) => {
+   const amount = Number(value) || 0;
+   return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+   }).format(amount);
+};
+
 export default function CreatorPostDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -186,7 +196,7 @@ export default function CreatorPostDetailPage() {
                          </div>
                          <div className="space-y-2">
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Post Revenue</p>
-                            <p className="text-5xl font-black font-['Fjalla One'] tracking-tighter text-emerald-400">${post.revenue?.total || 0}</p>
+                            <p className="text-5xl font-black font-['Fjalla One'] tracking-tighter text-emerald-400">{formatINR(post.revenue?.total || 0)}</p>
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Direct + Memberships</p>
                          </div>
                       </div>

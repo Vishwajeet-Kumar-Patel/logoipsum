@@ -40,7 +40,7 @@ export default function PurchaseDetailPanel({ item }: PurchaseDetailPanelProps) 
             </p>
           </div>
           <p className="font-[family-name:var(--font-figtree)] font-bold text-[16px] text-[var(--heading,#1a1a1a)] whitespace-nowrap shrink-0">
-            $240.00
+            ₹240.00
           </p>
         </div>
 
@@ -88,10 +88,10 @@ export default function PurchaseDetailPanel({ item }: PurchaseDetailPanelProps) 
         </p>
         <div className="flex flex-col gap-[6px]">
           {[
-            { label: "Total MRP", value: "$20" },
-            { label: "Discount on MRP", value: "$20" },
-            { label: "Coupon discount", value: "$20" },
-            { label: "Platform fee", value: "$20" },
+            { label: "Total MRP", value: "₹20" },
+            { label: "Discount on MRP", value: "₹20" },
+            { label: "Coupon discount", value: "₹20" },
+            { label: "Platform fee", value: "₹20" },
           ].map((row) => (
             <div key={row.label} className="flex items-center justify-between">
               <p className="font-[family-name:var(--font-figtree)] font-medium text-[14px] text-[#757575]">
@@ -108,7 +108,7 @@ export default function PurchaseDetailPanel({ item }: PurchaseDetailPanelProps) 
               Total payable amount
             </p>
             <p className="font-[family-name:var(--font-figtree)] font-bold text-[16px] text-[var(--heading,#1a1a1a)]">
-              $1200
+              ₹1200
             </p>
           </div>
         </div>

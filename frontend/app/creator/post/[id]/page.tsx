@@ -7,6 +7,16 @@ import { ArrowLeft, Heart, MessageSquare, Eye, MoreHorizontal, User, Send, Loade
 import api from '@/src/lib/api';
 import toast from 'react-hot-toast';
 
+const formatINR = (value: number) => {
+   const amount = Number(value) || 0;
+   return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+   }).format(amount);
+};
+
 export default function CreatorPostDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -151,7 +161,7 @@ export default function CreatorPostDetailPage() {
                       <div className="space-y-8">
                          <div className="flex flex-col gap-2">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Revenue</span>
-                            <span className="text-3xl font-black text-emerald-500 font-['Fjalla One']">${post.revenue?.total || 0}</span>
+                            <span className="text-3xl font-black text-emerald-500 font-['Fjalla One']">{formatINR(post.revenue?.total || 0)}</span>
                          </div>
                          <div className="flex gap-10">
                             <div>

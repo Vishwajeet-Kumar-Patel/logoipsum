@@ -5,6 +5,16 @@ import React, { useState, useEffect } from 'react';
 import api from '@/src/lib/api';
 import { Search, ChevronDown, MoreVertical, Download, Users, TrendingUp, Eye, Link as LinkIcon, ShoppingBag, CreditCard, BarChart2, Video, Radio, FileText, Play, Trash2, Edit3, ExternalLink } from 'lucide-react';
 
+const formatINR = (value: number) => {
+   const amount = Number(value) || 0;
+   return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+   }).format(amount);
+};
+
 export default function InsightsPage() {
    const [activeTab, setActiveTab] = useState('Audience');
    const [activeMenu, setActiveMenu] = React.useState<React.Key | null>(null);
@@ -39,7 +49,7 @@ export default function InsightsPage() {
       title: post.title,
       price: `Type: ${post.type}`,
       published: `Published: ${new Date(post.date).toLocaleDateString()}`,
-      revenue: `$ ${post.total || 0}`,
+      revenue: formatINR(post.total || 0),
       subText: 'Total Revenue Generated',
       img: post.thumbnailUrl || (post.type === 'image' ? post.mediaUrl : 'https://via.placeholder.com/600x400')
    }));
@@ -49,7 +59,7 @@ export default function InsightsPage() {
       name: `User ${i + 1}`,
       product: sale.title || 'Post Access',
       date: new Date(sale.date).toLocaleDateString(),
-      price: `$ ${sale.revenue || 0}`,
+      price: formatINR(sale.revenue || 0),
       img: `https://i.pravatar.cc/150?u=sale-${i}`
    }));
 

@@ -7,6 +7,16 @@ import { Settings, Edit2, Palette, Rocket, Megaphone, ArrowRight, MoreHorizontal
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
+const formatINR = (value: number) => {
+  const amount = Number(value) || 0;
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
+
 export default function CreatorHomePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('Home');
@@ -200,7 +210,7 @@ export default function CreatorHomePage() {
                      <ShoppingBag className="w-4 h-4" />
                      <span className="text-xs font-bold uppercase tracking-widest">Earnings</span>
                   </div>
-                  <p className="text-2xl font-black text-[#1c1917] font-['Fjalla One']">${stats?.totalEarned?.toLocaleString() || '0'}</p>
+                  <p className="text-2xl font-black text-[#1c1917] font-['Fjalla One']">{formatINR(stats?.totalEarned || 0)}</p>
                   <p className="text-[11px] font-bold text-emerald-600 mt-1">Total accumulated</p>
                </div>
                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">

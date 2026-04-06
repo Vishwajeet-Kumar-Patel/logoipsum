@@ -90,7 +90,7 @@ export default function PaymentSuccessfull() {
               <span
                 className={`${fjallaOne.className} text-[33px] leading-[48.6px] tracking-[0.66px]`}
               >
-                $80
+                ₹80
               </span>
               <span
                 className={`${bricolageGrotesque.className} font-light text-[32px] text-[#8a8a8a] px-1`}
@@ -112,27 +112,27 @@ export default function PaymentSuccessfull() {
                   className={`flex items-center justify-between w-full text-[16px] leading-[25.8px] tracking-[0.32px] text-[#3a3a3a] ${figtree.className}`}
                 >
                   <p className="font-medium">Content name / event name</p>
-                  <p className="font-bold">$ 80</p>
+                  <p className="font-bold">₹80</p>
                 </div>
                 <div
                   className={`flex items-center justify-between w-full text-[13px] leading-[18.3px] tracking-[0.26px] text-[#9a9a9a] ${figtree.className} font-medium`}
                 >
                   <p>Billed monthly</p>
-                  <p>$ 80</p>
+                  <p>₹80</p>
                 </div>
               </div>
               <div
                 className={`flex items-center justify-between w-full text-[16px] leading-[25.8px] tracking-[0.32px] ${figtree.className}`}
               >
                 <p className="font-medium text-[#3a3a3a]">Tax</p>
-                <p className="font-bold text-[#272727]">$ 2</p>
+                <p className="font-bold text-[#272727]">₹2</p>
               </div>
             </div>
             <div
               className={`flex items-center justify-between w-full text-[19px] leading-[29.2px] tracking-[0.38px] text-[#1a1a1a] ${figtree.className} font-bold`}
             >
               <p>Total</p>
-              <p>$ 100</p>
+              <p>₹100</p>
             </div>
           </div>
         </div>

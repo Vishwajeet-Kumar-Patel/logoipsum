@@ -1,12 +1,12 @@
 /**
- * Formats a number into USD currency.
+ * Formats a number into INR currency.
  * @param {number} amount
  * @returns {string}
  */
 export function formatCurrency(amount = 0) {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(Number(amount) || 0);
@@ -23,7 +23,7 @@ export function validateTopUpAmount(amount) {
   }
 
   if (amount < 5) {
-    return { valid: false, message: 'Minimum top-up amount is $5.' };
+    return { valid: false, message: 'Minimum top-up amount is ₹5.' };
   }
 
   return { valid: true, message: '' };

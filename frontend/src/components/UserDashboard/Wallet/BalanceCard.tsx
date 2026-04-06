@@ -7,9 +7,9 @@ interface BalanceCardProps {
 
 export default function BalanceCard({ balance }: BalanceCardProps) {
   // Format balance with commas
-  const formattedBalance = new Intl.NumberFormat('en-US', {
+  const formattedBalance = new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(balance);

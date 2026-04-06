@@ -2,13 +2,21 @@
 
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import { recentActivityFeed } from '@/src/data/revenueData';
+
+interface ActivityItem {
+  text: string;
+  time: string;
+  dotColor: string;
+}
 
 interface Props {
+  activityFeed: ActivityItem[];
+  insightMessage: string;
+  currentProjectionText: string;
   delay?: number;
 }
 
-export function InsightAndActivityCards({ delay = 0 }: Props) {
+export function InsightAndActivityCards({ activityFeed, insightMessage, currentProjectionText, delay = 0 }: Props) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
       {/* Recent Activity Card */}
@@ -22,7 +30,7 @@ export function InsightAndActivityCards({ delay = 0 }: Props) {
         <h3 style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 16 }}>Recent Activity</h3>
 
         <div className="space-y-5 flex-1">
-          {recentActivityFeed.map((item, index) => (
+          {activityFeed.map((item, index) => (
             <div key={index} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: item.dotColor }} />
@@ -65,14 +73,14 @@ export function InsightAndActivityCards({ delay = 0 }: Props) {
         <div>
           <h3 style={{ fontSize: 24, fontWeight: 600, color: 'white', marginBottom: 16 }}>Insight</h3>
           <p style={{ fontSize: 15, fontWeight: 500, color: 'rgba(255,255,255,0.9)', lineHeight: 1.5, paddingRight: 40 }}>
-            Your revenue increased by 14% since you optimized creator payout schedules.
+            {insightMessage}
           </p>
         </div>
 
         <div className="mt-12">
           <div className="flex justify-between items-center mb-4">
             <span style={{ fontSize: 11, color: '#9CA3AF' }}>Current Projection</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>₹ 5.2M / yr</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{currentProjectionText}</span>
           </div>
           <button
             style={{

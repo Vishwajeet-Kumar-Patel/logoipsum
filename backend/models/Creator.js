@@ -19,8 +19,8 @@ const creatorSchema = mongoose.Schema(
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     subscribers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     earnings: {
-      total: { type: Number, default: 24892.50 },
-      thisMonth: { type: Number, default: 4250.00 },
+      total: { type: Number, default: 0 },
+      thisMonth: { type: Number, default: 0 },
     },
     subscriptionPrice: { type: Number, default: 4.99 },
     payoutSettings: {

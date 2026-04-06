@@ -46,11 +46,22 @@ const getDashboardData = async (req, res) => {
 
     const posts = await Post.find({ creatorId: creator._id });
     const activeSubscribers = creator.subscribers ? creator.subscribers.length : 0;
-    
-    // Sum real earnings from posts
-    const calculatedTotalEarned = posts.reduce((sum, p) => sum + (p.revenue?.total || 0), 0);
-    const totalEarned = Math.max(creator.earnings.total, calculatedTotalEarned);
-    const thisMonth = creator.earnings.thisMonth;
+
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const calculatedPostTotal = posts.reduce((sum, post) => sum + (Number(post.revenue?.total) || 0), 0);
+    const calculatedPostThisMonth = posts.reduce((sum, post) => {
+      if (post.createdAt && new Date(post.createdAt) >= monthStart) {
+        return sum + (Number(post.revenue?.total) || 0);
+      }
+      return sum;
+    }, 0);
+
+    const subscriptionRevenue = activeSubscribers * (Number(creator.subscriptionPrice) || 0);
+    const totalEarned = calculatedPostTotal + subscriptionRevenue;
+    const thisMonth = calculatedPostThisMonth;
 
     // Per-post performance/revenue table
     const postRevenueBreakdown = posts.map(p => ({
@@ -58,9 +69,9 @@ const getDashboardData = async (req, res) => {
       title: p.title,
       type: p.mediaType,
       date: p.createdAt,
-      revenueSubscription: p.revenue?.breakdown?.subscriptionPay || 0,
-      revenueExclusive: p.revenue?.breakdown?.directPurchase || 0,
-      total: p.revenue?.total || 0,
+      revenueSubscription: Number(p.revenue?.breakdown?.subscriptionPay) || 0,
+      revenueExclusive: Number(p.revenue?.breakdown?.directPurchase) || 0,
+      total: Number(p.revenue?.total) || 0,
       views: p.views || 0,
       uniqueViews: p.uniqueViewers ? p.uniqueViewers.length : 0,
       likes: p.likes || 0,

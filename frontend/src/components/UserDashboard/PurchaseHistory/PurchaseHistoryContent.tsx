@@ -12,7 +12,7 @@ const THUMBNAIL = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?
 const TODAY_ITEMS: PurchaseItemData[] = Array.from({ length: 5 }, (_, i) => ({
   id: i + 1,
   title: "Enrolled for this new even by creator name",
-  price: "$ 1500",
+  price: "₹1500",
   date: "23 Jan, 2025",
   time: "3 : 25 pm",
   thumbnail: THUMBNAIL,
@@ -21,7 +21,7 @@ const TODAY_ITEMS: PurchaseItemData[] = Array.from({ length: 5 }, (_, i) => ({
 const YESTERDAY_ITEMS: PurchaseItemData[] = Array.from({ length: 5 }, (_, i) => ({
   id: i + 100,
   title: "Enrolled for this new even by creator name",
-  price: "$ 1500",
+  price: "₹1500",
   date: "23 Jan, 2025",
   time: "3 : 25 pm",
   thumbnail: THUMBNAIL,

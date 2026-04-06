@@ -5,21 +5,77 @@ import { RevenueStatCard } from '@/src/components/admin/revenue/RevenueStatCard'
 import { RevenueTrendChart } from '@/src/components/admin/revenue/RevenueTrendChart';
 import { InsightAndActivityCards } from '@/src/components/admin/revenue/InsightAndActivityCards';
 import { TransactionsTable } from '@/src/components/admin/revenue/TransactionsTable';
-import {
-  totalRevenueData,
-  platformCommissionData,
-  refundAmountData,
-  pendingPayoutsData,
-  revenueTransactionsData,
-} from '@/src/data/revenueData';
+import type { ChartDataPoint, TransactionListItem } from '@/src/data/revenueData';
+import { formatIndianCurrency } from '@/src/data/creatorsData';
+import api from '@/src/lib/api';
+
+interface RevenueAnalyticsResponse {
+  totals: {
+    totalRevenue: number;
+    platformCommission: number;
+    refundAmount: number;
+    pendingPayouts: number;
+    monthlyGrowth: number;
+  };
+  totalRevenueData: ChartDataPoint[];
+  platformCommissionData: ChartDataPoint[];
+  refundAmountData: ChartDataPoint[];
+  pendingPayoutsData: ChartDataPoint[];
+  revenueTransactionsData: TransactionListItem[];
+  recentActivityFeed: Array<{ text: string; time: string; dotColor: string }>;
+  insight: {
+    message: string;
+    currentProjection: number;
+  };
+}
 
 export default function RevenuePage() {
   const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [payload, setPayload] = useState<RevenueAnalyticsResponse | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    const fetchRevenueAnalytics = async () => {
+      try {
+        setError(null);
+        const res = await api.get<RevenueAnalyticsResponse>('/admin/revenue/analytics');
+        setPayload(res.data);
+      } catch (fetchError) {
+        console.error(fetchError);
+        setError('Failed to load revenue analytics.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRevenueAnalytics();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="p-6 w-full min-h-[calc(100vh-64px)] bg-[#F5F5F8] flex items-center justify-center">
+        <p className="text-[#6B7280] font-medium animate-pulse">Loading revenue data...</p>
+      </div>
+    );
+  }
+
+  if (error || !payload) {
+    return (
+      <div className="p-6 w-full min-h-[calc(100vh-64px)] bg-[#F5F5F8] flex items-center justify-center">
+        <p className="text-[#DC2626] font-medium">{error || 'Unable to fetch revenue analytics.'}</p>
+      </div>
+    );
+  }
+
+  const growthText = `${payload.totals.monthlyGrowth >= 0 ? '+' : ''}${payload.totals.monthlyGrowth.toFixed(1)}%`;
+  const growthTrend = payload.totals.monthlyGrowth >= 0 ? 'positive' : 'negative';
+  const projectionText = `${formatIndianCurrency(payload.insight.currentProjection)} / yr`;
 
   return (
     <>
@@ -55,21 +111,23 @@ export default function RevenuePage() {
         <div className={`grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 ${mounted ? 'visible' : 'opacity-0'}`}>
           <RevenueStatCard
             label="Total Revenue"
-            value="₹ 4,82,500"
-            badge="+5%"
+            value={formatIndianCurrency(payload.totals.totalRevenue)}
+            badge={growthText}
+            badgeType={growthTrend}
             variant="line"
-            chartData={totalRevenueData}
+            chartData={payload.totalRevenueData}
             primaryColor="#FCA5A5" // light pink
-            footerText="+12.4% vs last month"
-            footerTrend="positive"
+            footerText={`${growthText} vs last month`}
+            footerTrend={growthTrend}
             delay={50}
           />
           <RevenueStatCard
             label="Platform Commission"
-            value="₹ 48,250"
-            badge="+5%"
+            value={formatIndianCurrency(payload.totals.platformCommission)}
+            badge={growthText}
+            badgeType={growthTrend}
             variant="line"
-            chartData={platformCommissionData}
+            chartData={payload.platformCommissionData}
             primaryColor="#FCA5A5" // light pink
             footerText="+5.2% vs last month"
             footerTrend="positive"
@@ -81,11 +139,11 @@ export default function RevenuePage() {
         <div className={`grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 ${mounted ? 'visible' : 'opacity-0'}`}>
           <RevenueStatCard
             label="Refund Amount"
-            value="₹ 12,400"
-            badge="+5%"
+            value={formatIndianCurrency(payload.totals.refundAmount)}
+            badge="-"
             badgeType="negative"
             variant="bar"
-            chartData={refundAmountData}
+            chartData={payload.refundAmountData}
             primaryColor="#EA580C"
             footerText="-2.1% improvement"
             footerTrend="negative"
@@ -93,10 +151,10 @@ export default function RevenuePage() {
           />
           <RevenueStatCard
             label="Pending Payouts"
-            value="₹ 1,20,000"
-            badge="+5%"
+            value={formatIndianCurrency(payload.totals.pendingPayouts)}
+            badge="+"
             variant="bar"
-            chartData={pendingPayoutsData}
+            chartData={payload.pendingPayoutsData}
             primaryColor="#111827"
             footerText="14 Payouts Pending"
             footerTrend="positive"
@@ -106,17 +164,22 @@ export default function RevenuePage() {
 
         {/* Row 3: Revenue Trend */}
         <div className={`mb-4 ${mounted ? 'visible' : 'opacity-0'}`}>
-          <RevenueTrendChart data={totalRevenueData} delay={250} />
+          <RevenueTrendChart data={payload.totalRevenueData} delay={250} />
         </div>
 
         {/* Row 4: Insight and Activity */}
         <div className={mounted ? 'visible' : 'opacity-0'}>
-          <InsightAndActivityCards delay={300} />
+          <InsightAndActivityCards
+            activityFeed={payload.recentActivityFeed}
+            insightMessage={payload.insight.message}
+            currentProjectionText={projectionText}
+            delay={300}
+          />
         </div>
 
         {/* Row 5: Transactions */}
         <div className={`mt-4 ${mounted ? 'visible' : 'opacity-0'}`}>
-          <TransactionsTable transactions={revenueTransactionsData} delay={400} />
+          <TransactionsTable transactions={payload.revenueTransactionsData} delay={400} />
         </div>
 
       </div>

@@ -1,13 +1,383 @@
 const User = require('../models/User');
 const Creator = require('../models/Creator');
 const Wallet = require('../models/Wallet');
+const Post = require('../models/Post');
+const { AppUser, AppReport, AppTransaction, AppTicket, AppSetting, AppDashboard } = require('../models/AdminData');
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS_UPPER = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+const clampPercent = (value) => {
+  if (!Number.isFinite(value)) return 0;
+  if (value < 0) return 0;
+  if (value > 100) return 100;
+  return Math.round(value);
+};
+
+const formatCompact = (value) => {
+  const num = Number(value) || 0;
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return `${num}`;
+};
+
+const toSeries = (labels) => labels.map((name) => ({ name, val: 0 }));
+
+const normalizeSeries = (series) => {
+  const max = Math.max(0, ...series.map((item) => Number(item.val) || 0));
+  if (max === 0) return series.map((item) => ({ ...item, val: 0 }));
+  return series.map((item) => ({
+    ...item,
+    val: clampPercent(((Number(item.val) || 0) / max) * 100),
+  }));
+};
+
+const byMonthName = (dateLike) => {
+  const date = new Date(dateLike);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString('default', { month: 'short' });
+};
+
+const formatDate = (dateLike) => {
+  const date = new Date(dateLike);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  });
+};
+
+const formatCurrency = (value) => `₹ ${new Intl.NumberFormat('en-IN').format(Number(value) || 0)}`;
+const formatCreatorEarnings = (value) => {
+  const amount = Number(value) || 0;
+  if (amount >= 1000000) return `₹${(amount / 1000000).toFixed(1)}M`;
+  if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}k`;
+  return `₹${amount.toFixed(2)}`;
+};
+
+exports.getCreatorsAnalyticsData = async (req, res) => {
+  try {
+    const [creators, users, posts, wallets] = await Promise.all([
+      Creator.find().sort({ createdAt: -1 }).lean(),
+      User.find({ role: 'creator' }).select('_id name email username isVerified createdAt').lean(),
+      Post.find().select('creatorId likes comments views isExclusive accessTier revenue createdAt').lean(),
+      Wallet.find().select('userId transactions').lean(),
+    ]);
+
+    const userById = new Map(users.map((user) => [String(user._id), user]));
+
+    const postsByCreator = new Map();
+    posts.forEach((post) => {
+      const creatorId = String(post.creatorId);
+      if (!postsByCreator.has(creatorId)) {
+        postsByCreator.set(creatorId, {
+          count: 0,
+          likes: 0,
+          comments: 0,
+          views: 0,
+          revenue: 0,
+          free: 0,
+          paid: 0,
+        });
+      }
+
+      const bucket = postsByCreator.get(creatorId);
+      bucket.count += 1;
+      bucket.likes += Number(post.likes) || 0;
+      bucket.comments += Number(post.comments) || 0;
+      bucket.views += Number(post.views) || 0;
+      bucket.revenue += Number(post.revenue?.total) || 0;
+
+      const isPaidPost = post.isExclusive === true || post.accessTier === 'members_only' || post.accessTier === 'exclusive_paid';
+      if (isPaidPost) bucket.paid += 1;
+      else bucket.free += 1;
+    });
+
+    const walletCreditsByUserId = new Map();
+    wallets.forEach((wallet) => {
+      const userId = String(wallet.userId);
+      const creditTotal = (wallet.transactions || []).reduce((sum, tx) => {
+        if (tx.type === 'credit' && tx.status === 'success') {
+          return sum + (Number(tx.amount) || 0);
+        }
+        return sum;
+      }, 0);
+      walletCreditsByUserId.set(userId, creditTotal);
+    });
+
+    const creatorRows = creators.map((creator, index) => {
+      const creatorUser = userById.get(String(creator.userId));
+      const walletCreditTotal = walletCreditsByUserId.get(String(creator.userId)) || 0;
+      const postStats = postsByCreator.get(String(creator._id)) || {
+        count: 0,
+        likes: 0,
+        comments: 0,
+        views: 0,
+        revenue: 0,
+        free: 0,
+        paid: 0,
+      };
+
+      const subscriptionRevenue = (creator.subscribers || []).length * (Number(creator.subscriptionPrice) || 0);
+      const totalRevenue = (postStats.revenue || 0) + subscriptionRevenue + walletCreditTotal;
+      const isVerified = Boolean(creatorUser?.isVerified) || creator.payoutSettings?.kyc?.status === 'verified';
+
+      return {
+        id: index + 1,
+        creatorDbId: String(creator._id),
+        name: creator.name || creator.username || creatorUser?.name || 'Creator',
+        email: creatorUser?.email || `${creator.username || 'creator'}@creator.com`,
+        avatar: creator.avatar || null,
+        status: creator.status === 'active' ? 'Active' : 'Inactive',
+        verified: isVerified,
+        revenue: totalRevenue,
+        subscribers: formatCompact((creator.subscribers || []).length),
+        content: postStats.count,
+        date: formatDate(creator.createdAt),
+        createdAt: creator.createdAt,
+      };
+    });
+
+    const totalCreatorsCount = creatorRows.length;
+    const activeCreatorsCount = creatorRows.filter((creator) => creator.status === 'Active').length;
+    const verifiedCreatorsCount = creatorRows.filter((creator) => creator.verified).length;
+    const totalRevenue = creatorRows.reduce((sum, creator) => sum + creator.revenue, 0);
+    const avgRevenuePerCreator = totalCreatorsCount > 0 ? Math.round(totalRevenue / totalCreatorsCount) : 0;
+    const retentionRate = totalCreatorsCount > 0 ? clampPercent((activeCreatorsCount / totalCreatorsCount) * 100) : 0;
+    const topRevenueCreators = [...creatorRows].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+
+    const totalCreatorsChartData = toSeries(MONTHS);
+    const activeCreatorsChartData = toSeries(MONTHS);
+    const revenueByMonth = toSeries(MONTHS);
+    const verifiedUsersByMonth = toSeries(MONTHS_UPPER).map((item) => ({ ...item, users: 0, creators: 0 }));
+
+    creators.forEach((creator) => {
+      const month = byMonthName(creator.createdAt);
+      if (!month) return;
+
+      const totalPoint = totalCreatorsChartData.find((point) => point.name === month);
+      if (totalPoint) totalPoint.val += 1;
+
+      if (creator.status === 'active') {
+        const activePoint = activeCreatorsChartData.find((point) => point.name === month);
+        if (activePoint) activePoint.val += 1;
+      }
+
+      const creatorUser = userById.get(String(creator.userId));
+      const monthUpper = month.toUpperCase();
+      const verifiedPoint = verifiedUsersByMonth.find((point) => point.name === monthUpper);
+      if (verifiedPoint) {
+        verifiedPoint.users += 1;
+        if (creatorUser?.isVerified || creator.payoutSettings?.kyc?.status === 'verified') {
+          verifiedPoint.creators += 1;
+        }
+      }
+    });
+
+    posts.forEach((post) => {
+      const month = byMonthName(post.createdAt);
+      if (!month) return;
+      const revenuePoint = revenueByMonth.find((point) => point.name === month);
+      if (revenuePoint) {
+        revenuePoint.val += Number(post.revenue?.total) || 0;
+      }
+    });
+
+    const normalizedTotalCreators = normalizeSeries(totalCreatorsChartData);
+    const normalizedActiveCreators = normalizeSeries(activeCreatorsChartData);
+    const normalizedTopRevenue = normalizeSeries(revenueByMonth);
+
+    const retentionRateChartData = normalizedActiveCreators.map((point, index) => ({
+      name: point.name,
+      val: clampPercent(Math.min(100, point.val + (index % 3 === 0 ? 5 : 0))),
+    }));
+
+    const analyticsActiveCreatorsData = normalizedTotalCreators.map((point, index) => ({
+      name: point.name,
+      val: clampPercent(Math.max(0, point.val - (index % 4 === 0 ? 6 : 2))),
+    }));
+
+    const creatorGrowthData = normalizedTotalCreators.map((point, index) => {
+      const month = MONTHS[index];
+      const monthPosts = posts.filter((post) => byMonthName(post.createdAt) === month);
+      const free = monthPosts.filter((post) => !(post.isExclusive === true || post.accessTier === 'members_only' || post.accessTier === 'exclusive_paid')).length;
+      const paid = monthPosts.length - free;
+      const maxMix = Math.max(1, monthPosts.length);
+      return {
+        name: point.name,
+        free: clampPercent((free / maxMix) * 100),
+        paid: clampPercent((paid / maxMix) * 100),
+      };
+    });
+
+    const totalLikes = posts.reduce((sum, post) => sum + (Number(post.likes) || 0), 0);
+    const totalComments = posts.reduce((sum, post) => sum + (Number(post.comments) || 0), 0);
+    const totalViews = posts.reduce((sum, post) => sum + (Number(post.views) || 0), 0);
+    const totalPosts = posts.length || 1;
+
+    const engagement = {
+      avgLikesPerPost: Math.round(totalLikes / totalPosts),
+      avgComments: Math.round(totalComments / totalPosts),
+      engagementRate: totalViews > 0 ? Number((((totalLikes + totalComments) / totalViews) * 100).toFixed(2)) : 0,
+    };
+
+    res.status(200).json({
+      stats: {
+        totalCreators: totalCreatorsCount,
+        activeCreators: activeCreatorsCount,
+        verifiedCreators: verifiedCreatorsCount,
+        topRevenueCreators: topRevenueCreators.reduce((sum, creator) => sum + creator.revenue, 0),
+        totalRevenue,
+        avgRevenuePerCreator,
+        retentionRate,
+      },
+      charts: {
+        totalCreatorsChartData: normalizedTotalCreators,
+        activeCreatorsChartData: normalizedActiveCreators,
+        verifiedCreatorsChartData: verifiedUsersByMonth,
+        topRevenueChartData: normalizedTopRevenue,
+        retentionRateChartData,
+        analyticsActiveCreatorsData,
+        creatorGrowthData,
+      },
+      creatorsTableData: creatorRows,
+      engagement,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getRevenueAnalyticsData = async (req, res) => {
+  try {
+    const [wallets, creators, settings] = await Promise.all([
+      Wallet.find().populate('userId', 'name').lean(),
+      Creator.find().sort({ 'earnings.total': -1 }).lean(),
+      AppSetting.findOne().lean(),
+    ]);
+
+    const totalRevenueDataRaw = toSeries(MONTHS);
+    const platformCommissionDataRaw = toSeries(MONTHS);
+    const refundAmountDataRaw = toSeries(MONTHS);
+    const pendingPayoutsDataRaw = toSeries(MONTHS);
+
+    const flatTransactions = [];
+    wallets.forEach((wallet) => {
+      (wallet.transactions || []).forEach((transaction, txIndex) => {
+        const month = byMonthName(transaction.createdAt);
+        if (!month) return;
+
+        const amount = Number(transaction.amount) || 0;
+        const isCredit = transaction.type === 'credit';
+        const isSuccess = transaction.status === 'success';
+        const isPending = transaction.status === 'pending';
+        const isFailed = transaction.status === 'failed';
+
+        if (isCredit && isSuccess) {
+          const revenuePoint = totalRevenueDataRaw.find((point) => point.name === month);
+          if (revenuePoint) revenuePoint.val += amount;
+
+          const commissionRate = Number(settings?.commission) || 10;
+          const commissionPoint = platformCommissionDataRaw.find((point) => point.name === month);
+          if (commissionPoint) commissionPoint.val += (amount * commissionRate) / 100;
+        }
+
+        if (isFailed) {
+          const refundPoint = refundAmountDataRaw.find((point) => point.name === month);
+          if (refundPoint) refundPoint.val += amount;
+        }
+
+        if (isPending) {
+          const pendingPoint = pendingPayoutsDataRaw.find((point) => point.name === month);
+          if (pendingPoint) pendingPoint.val += amount;
+        }
+
+        flatTransactions.push({
+          id: `${String(wallet._id)}-${txIndex}`,
+          transactionId: transaction.referenceId || `TXN-${String(wallet._id).slice(-4)}${txIndex + 1}`,
+          user: { name: wallet.userId?.name || 'User' },
+          amount,
+          type: isCredit ? 'Subscription' : 'Tip',
+          status: isPending ? 'Pending' : 'Completed',
+          date: formatDate(transaction.createdAt),
+          createdAt: transaction.createdAt,
+        });
+      });
+    });
+
+    flatTransactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const revenueTransactionsData = flatTransactions.slice(0, 10).map((transaction, index) => ({
+      id: transaction.id,
+      transactionId: transaction.transactionId,
+      user: transaction.user,
+      creator: { name: creators[index % Math.max(creators.length, 1)]?.name || 'Creator' },
+      amount: transaction.amount,
+      type: transaction.type,
+      status: transaction.status,
+      date: transaction.date,
+    }));
+
+    const recentActivityFeed = flatTransactions.slice(0, 3).map((transaction) => ({
+      text: `${formatCurrency(transaction.amount)} ${transaction.type.toLowerCase()} ${transaction.status.toLowerCase()}`,
+      time: transaction.date,
+      dotColor: transaction.status === 'Completed' ? '#10B981' : '#F59E0B',
+    }));
+
+    const totalRevenueAmount = flatTransactions
+      .filter((transaction) => transaction.type === 'Subscription' && transaction.status === 'Completed')
+      .reduce((sum, transaction) => sum + transaction.amount, 0);
+
+    const commissionRate = Number(settings?.commission) || 10;
+    const platformCommissionAmount = Math.round((totalRevenueAmount * commissionRate) / 100);
+    const refundAmount = flatTransactions
+      .filter((transaction) => transaction.status !== 'Completed')
+      .reduce((sum, transaction) => sum + transaction.amount, 0);
+    const pendingPayoutsAmount = flatTransactions
+      .filter((transaction) => transaction.status === 'Pending')
+      .reduce((sum, transaction) => sum + transaction.amount, 0);
+
+    const monthlyTotal = totalRevenueDataRaw.map((point) => point.val);
+    const currentMonthValue = monthlyTotal[monthlyTotal.length - 1] || 0;
+    const previousMonthValue = monthlyTotal[monthlyTotal.length - 2] || 0;
+    const monthlyGrowth = previousMonthValue > 0
+      ? (((currentMonthValue - previousMonthValue) / previousMonthValue) * 100)
+      : 0;
+
+    res.status(200).json({
+      totals: {
+        totalRevenue: totalRevenueAmount,
+        platformCommission: platformCommissionAmount,
+        refundAmount,
+        pendingPayouts: pendingPayoutsAmount,
+        monthlyGrowth: Number(monthlyGrowth.toFixed(2)),
+      },
+      totalRevenueData: normalizeSeries(totalRevenueDataRaw),
+      platformCommissionData: normalizeSeries(platformCommissionDataRaw),
+      refundAmountData: normalizeSeries(refundAmountDataRaw),
+      pendingPayoutsData: normalizeSeries(pendingPayoutsDataRaw),
+      revenueTransactionsData,
+      recentActivityFeed,
+      insight: {
+        message: monthlyGrowth >= 0
+          ? `Revenue improved by ${monthlyGrowth.toFixed(1)}% compared to last month.`
+          : `Revenue is down by ${Math.abs(monthlyGrowth).toFixed(1)}% compared to last month.`,
+        currentProjection: totalRevenueAmount * 12,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 exports.getDashboardData = async (req, res) => {
   try {
-    const [allUsers, allCreators, allWallets] = await Promise.all([
+    const [allUsers, allCreators, allWallets, allPosts] = await Promise.all([
         User.find().sort({ createdAt: -1 }),
         Creator.find().sort({ 'earnings.total': -1 }),
-        Wallet.find().populate('userId', 'name avatar')
+      Wallet.find().populate('userId', 'name avatar'),
+      Post.find().select('creatorId revenue').lean(),
     ]);
     
     // Aggregating Totals
@@ -74,12 +444,42 @@ exports.getDashboardData = async (req, res) => {
       }
     });
 
+    const walletCreditsByUserId = new Map();
+    allWallets.forEach((wallet) => {
+      const userId = wallet?.userId?._id ? String(wallet.userId._id) : String(wallet.userId);
+      const credits = (wallet.transactions || []).reduce((sum, tx) => {
+        if (tx.type === 'credit' && tx.status === 'success') {
+          return sum + (Number(tx.amount) || 0);
+        }
+        return sum;
+      }, 0);
+      walletCreditsByUserId.set(userId, credits);
+    });
+
+    const postRevenueByCreatorId = new Map();
+    allPosts.forEach((post) => {
+      const creatorId = String(post.creatorId);
+      const value = Number(post.revenue?.total) || 0;
+      postRevenueByCreatorId.set(creatorId, (postRevenueByCreatorId.get(creatorId) || 0) + value);
+    });
+
+    const getCreatorRevenue = (creator) => {
+      const postRevenue = postRevenueByCreatorId.get(String(creator?._id)) || 0;
+      const subscriptionRevenue = (creator?.subscribers?.length || 0) * (Number(creator?.subscriptionPrice) || 0);
+      const walletCreditTotal = walletCreditsByUserId.get(String(creator?.userId)) || 0;
+      return postRevenue + subscriptionRevenue + walletCreditTotal;
+    };
+
     const colors = ['#6366F1', '#F97316', '#1F2937', '#10B981', '#EAB308'];
-    const topCreators = allCreators.slice(0, 3).map((c, index) => ({
+    const rankedCreators = [...allCreators]
+      .sort((a, b) => getCreatorRevenue(b) - getCreatorRevenue(a))
+      .slice(0, 3);
+
+    const topCreators = rankedCreators.map((c, index) => ({
         initials: c.name ? c.name.substring(0, 2).toUpperCase() : 'CR',
         name: c.name || c.username,
         role: c.category || 'Creator',
-        earnings: `₹${(c.earnings?.total / 1000 || 0).toFixed(1)}k`,
+        earnings: formatCreatorEarnings(getCreatorRevenue(c)),
         rank: index + 1,
         color: colors[index % colors.length]
     }));
@@ -125,7 +525,6 @@ exports.getDashboardData = async (req, res) => {
 };
 
 // --- Legacy Endpoints for Other Admin Panels ---
-const { AppUser, AppReport, AppTransaction, AppTicket, AppSetting, AppDashboard } = require('../models/AdminData');
 const {
   DEFAULT_SESSION_TIMEOUT,
   DEFAULT_MIN_PASSWORD_LENGTH,

@@ -19,7 +19,13 @@ export default async function AddCreditsSuccessPage({ searchParams }: SuccessPag
   const rawTotal = Number(params.total);
   const total = Number.isFinite(rawTotal) ? rawTotal : amount + tax;
 
-  const formatMoney = (value: number) => `$ ${Number.isFinite(value) ? value : 0}`;
+  const formatMoney = (value: number) =>
+    new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number.isFinite(value) ? value : 0);
 
   return (
     <div className="bg-[var(--bg,#f6f4f1)] min-h-screen w-full flex relative items-center justify-center overflow-x-hidden p-[42px] sm:p-[20px]">
@@ -49,7 +55,7 @@ export default async function AddCreditsSuccessPage({ searchParams }: SuccessPag
               Adding credit to my wallet
             </p>
             <div className="flex items-center flex-nowrap whitespace-nowrap leading-[0]">
-              <span className="font-[family-name:var(--font-fjalla)] font-normal text-[33px] leading-[48.6px] tracking-[0.66px] text-[#121212]">${amount}</span>
+              <span className="font-[family-name:var(--font-fjalla)] font-normal text-[33px] leading-[48.6px] tracking-[0.66px] text-[#121212]">{formatMoney(amount)}</span>
               <span className="font-[family-name:var(--font-figtree)] font-light text-[32px] leading-normal text-[#8a8a8a] ml-1 mr-1">/</span>
               <span className="font-[family-name:var(--font-figtree)] font-medium text-[16px] leading-[25.8px] tracking-[0.32px] text-[#8a8a8a] mt-2">month</span>
             </div>

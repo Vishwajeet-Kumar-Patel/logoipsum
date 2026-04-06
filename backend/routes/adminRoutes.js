@@ -8,6 +8,8 @@ const {
 	deleteUser,
 	getUserDetails,
 	getDashboardData,
+	getCreatorsAnalyticsData,
+	getRevenueAnalyticsData,
 	getPlatformSettings,
 	updatePlatformToggle,
 	updateSubscriptionPlan,
@@ -24,6 +26,8 @@ router.use(checkBan);
 router.use(authorize('admin'));
 
 router.get('/dashboard', getDashboardData);
+router.get('/creators/analytics', getCreatorsAnalyticsData);
+router.get('/revenue/analytics', getRevenueAnalyticsData);
 router.get('/data', getAllData);
 router.put('/user/:id', updateUser);
 router.delete('/user/:id', deleteUser);

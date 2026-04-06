@@ -42,8 +42,8 @@ const amountSchema = z.object({
     .string()
     .min(1, "Amount is required")
     .refine((v) => !isNaN(Number(v)), "Must be a valid number")
-    .refine((v) => Number(v) >= 5, "Minimum top-up is $5")
-    .refine((v) => Number(v) <= 10000, "Maximum top-up is $10,000"),
+    .refine((v) => Number(v) >= 5, "Minimum top-up is ₹5")
+    .refine((v) => Number(v) <= 10000, "Maximum top-up is ₹10,000"),
 });
 
 const emailSchema = z
@@ -109,6 +109,15 @@ type FormFields = {
 };
 
 type FieldErrors = Partial<Record<keyof FormFields, string>>;
+
+const formatINR = (amount: number) => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
 
 // ─────────────────────────────────────────────
 // HELPERS
@@ -493,7 +502,7 @@ export default function AddCreditsForm() {
               Add Credits
             </h1>
             <p className="font-[family-name:var(--font-figtree)] text-[13px] text-[#9a9a9a] mt-1">
-              Minimum top-up: $5 · Max: $10,000
+              Minimum top-up: ₹5 · Max: ₹10,000
             </p>
           </div>
           <div className="flex items-center gap-[6px] bg-[#f6f4f1] rounded-[8px] px-3 py-2">
@@ -510,14 +519,14 @@ export default function AddCreditsForm() {
         {/* Amount */}
         <div className="relative">
           <InputField
-            label="Amount (USD)"
+            label="Amount (INR)"
             type="number"
             inputMode="decimal"
             value={form.amount}
             placeholder="0.00"
             error={errors.amount}
             touched={touched.amount}
-            prefix={<span className="text-[#9a9a9a] font-semibold text-[15px]">$</span>}
+            prefix={<span className="text-[#9a9a9a] font-semibold text-[15px]">₹</span>}
             onChange={(v) => setField("amount", v)}
             onBlur={() => touchField("amount")}
           />
@@ -527,12 +536,12 @@ export default function AddCreditsForm() {
         {total !== null && (
           <div className="bg-[#f6f4f1] rounded-[10px] px-4 py-3 flex items-center justify-between">
             <div className="font-[family-name:var(--font-figtree)] text-[13px] text-[#808080]">
-              <span>Credits: <strong className="text-[#1a1a1a]">${amountNum.toFixed(2)}</strong></span>
+              <span>Credits: <strong className="text-[#1a1a1a]">{formatINR(amountNum)}</strong></span>
               <span className="mx-2">·</span>
-              <span>Processing fee: <strong className="text-[#1a1a1a]">${tax.toFixed(2)}</strong></span>
+              <span>Processing fee: <strong className="text-[#1a1a1a]">{formatINR(tax)}</strong></span>
             </div>
             <span className="font-[family-name:var(--font-figtree)] font-bold text-[14px] text-[#1a1a1a]">
-              Total ${total.toFixed(2)}
+              Total {formatINR(total)}
             </span>
           </div>
         )}
@@ -785,7 +794,7 @@ export default function AddCreditsForm() {
             <>
               <LockIcon />
               <span className="font-[family-name:var(--font-figtree)] font-bold text-[15px] text-white">
-                {total ? `Pay $${total.toFixed(2)}` : "Pay Securely"}
+                {total ? `Pay ${formatINR(total)}` : "Pay Securely"}
               </span>
             </>
           )}

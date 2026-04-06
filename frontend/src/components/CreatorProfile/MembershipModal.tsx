@@ -18,6 +18,12 @@ interface MembershipModalProps {
 export default function MembershipModal({ isOpen, onClose, creatorName, creatorId, price, onSuccess }: MembershipModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const formattedPrice = new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
 
   if (!isOpen) return null;
 
@@ -80,7 +86,7 @@ export default function MembershipModal({ isOpen, onClose, creatorName, creatorI
                   <p className="text-[15px] font-semibold text-[#1a1a1a]">Recurring Subscription</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-[#1a1a1a]">${price.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-[#1a1a1a]">{formattedPrice}</p>
                   <p className="text-[13px] text-[#5a5a5a]">per month</p>
                 </div>
               </div>

@@ -40,7 +40,7 @@ export function AddFundsModal({ open, loading = false, onClose, onSubmit }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
         <h3 className="text-lg font-semibold text-[#1a1a1a]">Add Funds</h3>
-        <p className="mt-1 text-sm text-[#5a5a5a]">Minimum top-up is $5.</p>
+        <p className="mt-1 text-sm text-[#5a5a5a]">Minimum top-up is ₹5.</p>
 
         <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
           <input

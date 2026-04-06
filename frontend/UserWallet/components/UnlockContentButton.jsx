@@ -16,7 +16,7 @@ export function UnlockContentButton({ contentId, price, onUnlocked }) {
   const label = useMemo(() => {
     if (unlocked) return 'Unlocked';
     if (loading) return 'Unlocking...';
-    return `Unlock for $${Number(price).toFixed(2)}`;
+    return `Unlock for ₹${Number(price).toFixed(2)}`;
   }, [loading, price, unlocked]);
 
   const handleUnlock = async () => {

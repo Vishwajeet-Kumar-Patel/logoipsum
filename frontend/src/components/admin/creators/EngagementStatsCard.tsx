@@ -2,11 +2,20 @@
 
 import React from 'react';
 
+interface EngagementData {
+  avgLikesPerPost: number;
+  avgComments: number;
+  engagementRate: number;
+}
+
 interface Props {
+  data: EngagementData;
   delay?: number;
 }
 
-export function EngagementStatsCard({ delay = 0 }: Props) {
+export function EngagementStatsCard({ data, delay = 0 }: Props) {
+  const progressWidth = Math.max(0, Math.min(100, Math.round(data.engagementRate * 10)));
+
   return (
     <div
       className="bg-white rounded-xl p-6 flex flex-col justify-between"
@@ -26,7 +35,7 @@ export function EngagementStatsCard({ delay = 0 }: Props) {
             Avg Likes / Post
           </p>
           <p style={{ fontSize: 24, fontWeight: 700, color: '#111827' }}>
-            12.4K
+            {`${data.avgLikesPerPost.toLocaleString('en-IN')}`}
           </p>
         </div>
 
@@ -35,7 +44,7 @@ export function EngagementStatsCard({ delay = 0 }: Props) {
             Avg Comments
           </p>
           <p style={{ fontSize: 24, fontWeight: 700, color: '#111827' }}>
-            1.8K
+            {`${data.avgComments.toLocaleString('en-IN')}`}
           </p>
         </div>
 
@@ -44,11 +53,11 @@ export function EngagementStatsCard({ delay = 0 }: Props) {
             Engagement Rate
           </p>
           <p style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 12 }}>
-            8.42%
+            {`${data.engagementRate.toFixed(2)}%`}
           </p>
           {/* Progress bar */}
           <div style={{ width: '100%', height: 4, background: '#E5E7EB', borderRadius: 2 }}>
-            <div style={{ width: '65%', height: '100%', background: '#111827', borderRadius: 2 }} />
+            <div style={{ width: `${progressWidth}%`, height: '100%', background: '#111827', borderRadius: 2 }} />
           </div>
         </div>
       </div>

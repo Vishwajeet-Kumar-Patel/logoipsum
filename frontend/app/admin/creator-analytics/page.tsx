@@ -1,39 +1,79 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BarChartCard } from '@/src/components/admin/creators/BarChartCard';
 import { LineChartCard } from '@/src/components/admin/creators/LineChartCard';
 import { CreatorGrowthChartCard } from '@/src/components/admin/creators/CreatorGrowthChartCard';
 import { EngagementStatsCard } from '@/src/components/admin/creators/EngagementStatsCard';
 import { CreatorsTable } from '@/src/components/admin/creators/CreatorsTable';
+import api from '@/src/lib/api';
 
 import {
-  totalCreatorsChartData,
-  activeCreatorsChartData,
-  retentionRateChartData,
-  analyticsActiveCreatorsData,
-  creatorGrowthData,
-  creatorsTableData,
+  type ChartDataPoint,
+  type CreatorGrowthDataPoint,
   type TabId,
   type StatusFilter,
   type SortOption,
   type Creator,
+  formatIndianCurrency,
 } from '@/src/data/creatorsData';
 
 const ROWS_PER_PAGE = 7;
+
+interface CreatorAnalyticsResponse {
+  stats: {
+    totalRevenue: number;
+    avgRevenuePerCreator: number;
+    retentionRate: number;
+    activeCreators: number;
+  };
+  charts: {
+    totalCreatorsChartData: ChartDataPoint[];
+    activeCreatorsChartData: ChartDataPoint[];
+    retentionRateChartData: ChartDataPoint[];
+    analyticsActiveCreatorsData: ChartDataPoint[];
+    creatorGrowthData: CreatorGrowthDataPoint[];
+  };
+  creatorsTableData: Creator[];
+  engagement: {
+    avgLikesPerPost: number;
+    avgComments: number;
+    engagementRate: number;
+  };
+}
 
 export default function CreatorAnalyticsPage() {
   const [activeTab, setActiveTab] = useState<TabId>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [sortFilter, setSortFilter] = useState<SortOption>('Newest');
   const [currentPage, setCurrentPage] = useState(1);
+  const [payload, setPayload] = useState<CreatorAnalyticsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setError(null);
+        const res = await api.get<CreatorAnalyticsResponse>('/admin/creators/analytics');
+        setPayload(res.data);
+      } catch (fetchError) {
+        console.error(fetchError);
+        setError('Failed to load creator analytics.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []);
 
   const handleTabChange = (tab: TabId) => { setActiveTab(tab); setCurrentPage(1); };
   const handleStatusChange = (s: StatusFilter) => { setStatusFilter(s); setCurrentPage(1); };
   const handleSortChange = (s: SortOption) => { setSortFilter(s); setCurrentPage(1); };
 
   const filteredCreators = useMemo(() => {
-    let data: Creator[] = [...creatorsTableData];
+    let data: Creator[] = [...(payload?.creatorsTableData || [])];
 
     if (activeTab === 'verified') data = data.filter(c => c.verified);
     else if (activeTab === 'top') data = data.sort((a, b) => b.revenue - a.revenue).slice(0, 5);
@@ -47,10 +87,26 @@ export default function CreatorAnalyticsPage() {
     else if (sortFilter === 'Revenue ↓') data = [...data].sort((a, b) => b.revenue - a.revenue);
 
     return data;
-  }, [activeTab, statusFilter, sortFilter]);
+  }, [activeTab, statusFilter, sortFilter, payload]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCreators.length / ROWS_PER_PAGE));
   const pagedCreators = filteredCreators.slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE);
+
+  if (isLoading) {
+    return (
+      <div className="p-6 w-full min-h-[calc(100vh-64px)] bg-[#F5F5F8] flex items-center justify-center">
+        <p className="text-[#6B7280] font-medium animate-pulse">Loading creator analytics...</p>
+      </div>
+    );
+  }
+
+  if (error || !payload) {
+    return (
+      <div className="p-6 w-full min-h-[calc(100vh-64px)] bg-[#F5F5F8] flex items-center justify-center">
+        <p className="text-[#DC2626] font-medium">{error || 'Unable to fetch creator analytics.'}</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -80,23 +136,23 @@ export default function CreatorAnalyticsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           <BarChartCard
             label="Total Revenue"
-            value="24,580"
+            value={formatIndianCurrency(payload.stats.totalRevenue)}
             badge="+5%"
             badgeType="positive"
             description="Total Users Growth"
             subDescription="How many user using this website"
-            chartData={totalCreatorsChartData}
+            chartData={payload.charts.totalCreatorsChartData}
             barColor="#111827"
             delay={50}
           />
           <LineChartCard
             label="Avg Rev / Creator"
-            value="3,120"
+            value={formatIndianCurrency(payload.stats.avgRevenuePerCreator)}
             badge="+5%"
             badgeType="positive"
             description="Active Creators"
             subDescription="How many Creators using the website"
-            chartData={activeCreatorsChartData}
+            chartData={payload.charts.activeCreatorsChartData}
             delay={100}
           />
         </div>
@@ -105,22 +161,22 @@ export default function CreatorAnalyticsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           <LineChartCard
             label="Retention Rate"
-            value="8,450"
+            value={`${payload.stats.retentionRate}%`}
             badge="-5%"
             badgeType="negative"
             description="Pending Payouts"
             subDescription="Give us the no of Subscriptions in website"
-            chartData={retentionRateChartData}
+            chartData={payload.charts.retentionRateChartData}
             delay={150}
           />
           <BarChartCard
             label="Active Creators"
-            value="₹12,40,000"
+            value={payload.stats.activeCreators.toLocaleString('en-IN')}
             badge="+5%"
             badgeType="positive"
             description="Total Monthly Revenue"
             subDescription="Give you the number of revenue you get"
-            chartData={analyticsActiveCreatorsData}
+            chartData={payload.charts.analyticsActiveCreatorsData}
             barColor="#111827"
             delay={200}
           />
@@ -128,8 +184,15 @@ export default function CreatorAnalyticsPage() {
 
         {/* Row 3: Creator Growth and Engagement */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          <CreatorGrowthChartCard data={creatorGrowthData} delay={250} />
-          <EngagementStatsCard delay={300} />
+          <CreatorGrowthChartCard data={payload.charts.creatorGrowthData} delay={250} />
+          <EngagementStatsCard
+            data={{
+              avgLikesPerPost: payload.engagement.avgLikesPerPost,
+              avgComments: payload.engagement.avgComments,
+              engagementRate: payload.engagement.engagementRate,
+            }}
+            delay={300}
+          />
         </div>
 
         {/* Creators Table */}
