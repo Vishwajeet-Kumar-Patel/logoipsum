@@ -70,8 +70,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f4f1] p-6 sm:p-10 lg:p-16 w-full flex items-center justify-center" suppressHydrationWarning>
-      <div className="w-full max-w-[1440px] flex flex-col lg:flex-row gap-8 lg:gap-12 min-h-[calc(100vh-128px)]">
+    <div className="min-h-screen bg-[#f6f4f1] p-6 sm:p-10 lg:p-12 w-full flex items-center justify-center" suppressHydrationWarning>
+      <div className="w-full max-w-[1440px] flex flex-col lg:flex-row gap-8 lg:gap-12 items-stretch">
 
         {/* Left Content Area */}
         <div className="flex-1 flex flex-col items-center justify-center gap-8 py-10">
@@ -157,12 +157,12 @@ export default function LoginPage() {
         </div>
 
         {/* Right Image Area */}
-        <div className="flex-1 w-full min-h-[500px] lg:h-full rounded-[16px] border border-[#e4ded2] overflow-hidden relative shadow-sm">
+        <div className="flex-1 w-full min-h-[460px] lg:min-h-[680px] self-stretch rounded-[16px] border border-[#e4ded2] overflow-hidden relative shadow-sm">
           <Image
             src="/assets/images/Frame 2121453719.png"
             alt="Creators Fan Base"
             fill
-            className="object-cover"
+            className="object-cover object-center"
             priority
           />
         </div>
