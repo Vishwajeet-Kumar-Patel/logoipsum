@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         localStorage.removeItem('token');
         set({ user: null, token: null, unreadCount: 0 });
-        window.location.href = '/login';
+        window.location.href = '/login/sign-in';
       },
     }),
     {

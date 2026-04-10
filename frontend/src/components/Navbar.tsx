@@ -89,7 +89,7 @@ export default function Navbar() {
         </button>
 
         <Link
-          href="/signup"
+          href="/login"
           className="hidden cursor-pointer items-center gap-2 rounded-[42px] border border-[#ff9465] bg-[#f6f4f1] px-4 py-3 text-base text-[#1a1a1a] transition-shadow hover:shadow-lg md:flex"
           style={{
             fontFamily: "var(--font-lexend), 'Lexend', sans-serif",
@@ -140,7 +140,7 @@ export default function Navbar() {
           })}
 
           <Link
-            href="/signup"
+            href="/login"
             onClick={() => setIsMenuOpen(false)}
             className="mt-1 inline-flex w-full items-center justify-center gap-1 rounded-[42px] border border-[#ff9465] bg-[#121212] px-3 py-2 text-[12px] text-[#f2f2f2] shadow-[8px_8px_20px_rgba(69,9,0,0.16)]"
             style={{ fontFamily: "var(--font-lexend), 'Lexend', sans-serif" }}

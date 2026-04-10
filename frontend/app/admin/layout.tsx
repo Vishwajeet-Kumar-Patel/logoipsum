@@ -20,7 +20,7 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
 
   const redirectToLogin = useMemo(() => {
     const nextPath = encodeURIComponent(pathname || '/admin');
-    return `/login?next=${nextPath}`;
+    return `/login/sign-in?next=${nextPath}`;
   }, [pathname]);
 
   useEffect(() => {

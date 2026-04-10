@@ -798,7 +798,10 @@ export default function MobileLandingExact() {
         </p>
 
         <div className="mt-6 space-y-4">
-          {impactItems.map((item) => (
+          {impactItems.map((item) => {
+            const impactActionHref = item.button === "Join as Creator" ? "/login" : "/marketplace";
+
+            return (
             <article key={item.label} className="border-b border-[#3a3a3a] pb-2">
               <p
                 className="text-[12px] tracking-[0.12px] text-[#f95c4b]"
@@ -813,12 +816,13 @@ export default function MobileLandingExact() {
                 {item.title}
               </h3>
               <div className="mt-2">
-                <SmallButton href="/signup" dark>
+                <SmallButton href={impactActionHref} dark>
                   {item.button}
                 </SmallButton>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       </section>
 

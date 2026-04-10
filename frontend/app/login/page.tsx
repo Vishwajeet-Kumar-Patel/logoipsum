@@ -1,172 +1,90 @@
-"use client";
-
-import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
-import api from "@/src/lib/api";
-import { useAuthStore } from "@/src/store/useAuthStore";
-import { useBanStore } from "@/src/store/useBanStore";
-import toast from "react-hot-toast";
-import CaptchaChallenge from "@/src/components/common/CaptchaChallenge";
-import BrandLogo from "@/src/components/BrandLogo";
+import { LogIn, UserPlus } from "lucide-react";
 
-export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState("");
-  const [captchaRequired, setCaptchaRequired] = useState(false);
-  const [captchaRefreshNonce, setCaptchaRefreshNonce] = useState(0);
-
-  const login = useAuthStore((state) => state.login);
-  const setBanData = useBanStore((state) => state.setBanData);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (captchaRequired && !captchaToken) {
-      toast.error("Please complete the security check");
-      return;
-    }
-
-    setLoading(true);
-    try {
-        const res = await api.post('/auth/login', { email, password, captchaToken });
-        login(res.data);
-        toast.success(`Welcome back, ${res.data.name}!`);
-        setCaptchaToken('');
-        setCaptchaRefreshNonce((prev) => prev + 1);
-        
-        // RBAC Redirection
-        if (res.data.role === 'creator') {
-          try {
-            const banRes = await api.get('/appeals/my-appeal');
-            setBanData({
-              activeBan: banRes.data?.activeBan ?? null,
-              appeal: banRes.data?.appeal ?? null,
-            });
-          } catch {
-            setBanData({ activeBan: null, appeal: null });
-          }
-          router.push('/creator');
-        }
-        else if (res.data.role === 'admin') router.push('/admin');
-        else router.push('/user');
-    } catch (err: any) {
-        const message = err.response?.data?.message || "Login failed";
-        if (String(message).toLowerCase().includes('captcha')) {
-          setCaptchaToken('');
-          setCaptchaRefreshNonce((prev) => prev + 1);
-        }
-        toast.error(message);
-    } finally {
-        setLoading(false);
-    }
+type LoginEntryPageProps = {
+  searchParams?: {
+    next?: string;
   };
+};
+
+export default function LoginEntryPage({ searchParams }: LoginEntryPageProps) {
+  const nextPath = typeof searchParams?.next === "string" ? searchParams.next : "";
+  const loginHref = nextPath
+    ? `/login/sign-in?next=${encodeURIComponent(nextPath)}`
+    : "/login/sign-in";
+  const signupHref = nextPath
+    ? `/signup?next=${encodeURIComponent(nextPath)}`
+    : "/signup";
 
   return (
-    <div className="min-h-screen bg-[#f6f4f1] p-6 sm:p-10 lg:p-16 w-full flex items-center justify-center" suppressHydrationWarning>
-      <div className="w-full max-w-[1440px] flex flex-col lg:flex-row gap-8 lg:gap-12 min-h-[calc(100vh-128px)]">
-        
-        {/* Left Content Area */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-8 py-10">
-          
-          <Link href="/" className="mb-4">
-            <BrandLogo
-              iconSize={30}
-              className="inline-flex items-center gap-3"
-              textClassName="text-[30px] font-bold tracking-tight text-slate-800"
-            />
-          </Link>
-
-          {/* Heading */}
-          <div className="flex flex-col items-center justify-center text-center gap-2">
-            <h1 className="text-[#1a1a1a] text-[32px] sm:text-[40px] tracking-[0.8px] leading-tight font-['Fjalla_One'] uppercase">
-              Welcome Back
-            </h1>
-            <p className="text-[#3a3a3a] text-sm sm:text-base font-medium font-['Figtree'] max-w-[400px]">
-              Log in to manage your fan base and settings.
-            </p>
-          </div>
-
-          {/* Login Form */}
-          <form className="w-full max-w-[400px] flex flex-col gap-6" onSubmit={handleLogin}>
-            <div className="flex flex-col gap-2">
-               <label className="text-[20px] font-bold text-[#1a1a1a] font-['Fjalla_One'] uppercase tracking-tight">Email</label>
-               <input 
-                 type="email"
-                 value={email}
-                 onChange={(e) => setEmail(e.target.value)}
-                 required
-                 placeholder="your@email.com"
-                 className="w-full bg-[#faf8f5] border border-[#d8d1c7] rounded-full px-6 py-4 outline-none focus:border-[#e14517] transition-all"
-               />
-            </div>
-
-            <div className="flex flex-col gap-2">
-               <label className="text-[20px] font-bold text-[#1a1a1a] font-['Fjalla_One'] uppercase tracking-tight">Password</label>
-               <div className="relative">
-                 <input 
-                   type={showPassword ? "text" : "password"}
-                   value={password}
-                   onChange={(e) => setPassword(e.target.value)}
-                   required
-                   placeholder="********"
-                   className="w-full bg-[#faf8f5] border border-[#d8d1c7] rounded-full px-6 py-4 outline-none focus:border-[#e14517] transition-all"
-                 />
-                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400">
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                 </button>
-               </div>
-            </div>
-
-            <div className="flex flex-col gap-4 mt-2">
-              <CaptchaChallenge
-                onTokenChange={setCaptchaToken}
-                onRequirementChange={setCaptchaRequired}
-                refreshNonce={captchaRefreshNonce}
+    <main className="min-h-screen bg-[#f6f4f1] p-4 sm:p-8 lg:p-12 w-full flex items-center justify-center">
+      <section className="w-full max-w-[1400px] rounded-[14px] border border-[#d9d9d9] bg-white p-4 sm:p-6 md:p-8 shadow-[0_6px_28px_rgba(0,0,0,0.04)]">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-8 lg:gap-10 items-stretch">
+          <div className="flex flex-col items-center justify-center text-center px-4 sm:px-6 py-6 sm:py-10 lg:py-0">
+            <div className="mb-8 sm:mb-10">
+              <Image
+                src="/assets/icons/logo ipsum logo.svg"
+                alt="logoipsum"
+                width={153}
+                height={36}
+                className="h-[36px] w-auto"
+                priority
               />
+            </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex items-center justify-center gap-2 px-6 py-4 rounded-full border border-[#ff9465] text-[#f6f4f1] shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+            <h1
+              className="text-[#212121] text-[38px] sm:text-[52px] leading-[1.05] tracking-[0.2px]"
+              style={{ fontFamily: "'Fjalla One', sans-serif" }}
+            >
+              Make your own Fan Base
+            </h1>
+
+            <p
+              className="mt-4 text-[#4b4b4b] text-[15px] sm:text-[19px] leading-[1.55] max-w-[440px]"
+              style={{ fontFamily: "var(--font-figtree), 'Figtree', sans-serif" }}
+            >
+              This website empowers creators and influencers to
+              <br className="hidden sm:block" />
+              turn their passion into career
+            </p>
+
+            <div className="mt-10 flex flex-col items-center gap-5">
+              <Link
+                href={loginHref}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#ff9465] px-8 py-3 text-[20px] text-[#f6f4f1] min-w-[200px] shadow-[8px_8px_20px_rgba(69,9,0,0.35)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
                 style={{
                   background: "linear-gradient(131.5deg, #e14517 57.5%, #d6361f 100%)",
-                  fontFamily: "'Lexend', sans-serif",
+                  fontFamily: "var(--font-lexend), 'Lexend', sans-serif",
                 }}
               >
-                <span>{loading ? "Logging in..." : "Log in"}</span>
-                <LogIn className="w-5 h-5 ml-1" />
-              </button>
+                <span>Log in</span>
+                <LogIn className="h-5 w-5" />
+              </Link>
 
               <Link
-                href="/signup"
-                className="flex items-center justify-center gap-2 px-6 py-4 rounded-full border border-[#d8d1c7] text-[#1a1a1a] bg-white shadow-sm transition-all hover:bg-slate-50"
+                href={signupHref}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#ff9465] bg-white px-8 py-3 text-[20px] text-[#1a1a1a] min-w-[200px] shadow-[8px_8px_20px_rgba(69,9,0,0.16)] transition-colors hover:bg-[#fff8f3]"
+                style={{ fontFamily: "var(--font-lexend), 'Lexend', sans-serif" }}
               >
-                <span>Don&apos;t have an account? Sign up</span>
-                <UserPlus className="w-5 h-5 ml-1" />
+                <span>Sign up</span>
+                <UserPlus className="h-5 w-5" />
               </Link>
             </div>
-          </form>
-        </div>
+          </div>
 
-        {/* Right Image Area */}
-        <div className="flex-1 w-full min-h-[500px] lg:h-full rounded-[16px] border border-[#e4ded2] overflow-hidden relative shadow-sm">
-          <Image
-            src="/assets/images/Frame 2121453719.png"
-            alt="Creators Fan Base"
-            fill
-            className="object-cover"
-            priority
-          />
+          <div className="relative min-h-[420px] sm:min-h-[540px] lg:min-h-[720px] overflow-hidden rounded-[10px] border border-[#d9d9d9]">
+            <Image
+              src="/assets/images/Frame 2121453719.png"
+              alt="Fan base creators"
+              fill
+              priority
+              className="object-cover"
+            />
+          </div>
         </div>
-
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
+

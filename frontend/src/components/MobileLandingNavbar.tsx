@@ -124,7 +124,7 @@ export default function MobileLandingNavbar() {
         })}
 
         <Link
-          href="/signup"
+          href="/login"
           onClick={() => setIsMenuOpen(false)}
           className="mt-1 inline-flex w-full items-center justify-center rounded-[42px] border border-[#ff9465] bg-[#121212] px-3 py-2 text-[12px] text-[#f2f2f2] shadow-[8px_8px_20px_rgba(69,9,0,0.16)]"
           style={{ fontFamily: "var(--font-lexend), 'Lexend', sans-serif" }}

@@ -407,7 +407,7 @@ function SignUpForm() {
         {/* Already have account */}
         <p className="text-center text-[#5a5a5a] text-sm mt-2" style={{ fontFamily: "'Figtree', sans-serif" }}>
           Already have an account?{" "}
-          <Link href="/login" className="text-[#e14517] font-bold hover:underline">
+          <Link href="/login/sign-in" className="text-[#e14517] font-bold hover:underline">
             Log in
           </Link>
         </p>
